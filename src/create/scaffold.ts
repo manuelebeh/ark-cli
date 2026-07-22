@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { installAgent, writeAgentsIndex } from "../agents/install.js";
+import { installAgentsIntoProject } from "../agents/project-agents.js";
 import {
   loadMergedCatalog,
   readYamlFile,
@@ -74,8 +74,7 @@ export async function createProject(options: CreateOptions): Promise<{
       "project:",
       `  id: ${projectManifest.id}`,
       `  name: ${options.name}`,
-      "agents:",
-      ...options.agentIds.map((id) => `  - ${id}`),
+      "agents: []",
       "",
     ].join("\n"),
     "utf8",
@@ -84,38 +83,13 @@ export async function createProject(options: CreateOptions): Promise<{
   const layout = readFileSync(join(archDir, archManifest.files.layout), "utf8");
   writeFileSync(join(options.targetDir, "ARCHITECTURE.md"), layout, "utf8");
 
-  const installed = [];
-  for (const agentId of options.agentIds) {
-    const agentEntry = registry.agents.find((a) => a.id === agentId);
-    if (!agentEntry) {
-      throw new Error(`Unknown agent: ${agentId}`);
-    }
-    installed.push(
-      await installAgent({
-        agent: agentEntry,
-        catalogRoot: catalog.rootFor("agent", agentId),
-        projectRoot: options.targetDir,
-      }),
-    );
-  }
+  const result = await installAgentsIntoProject({
+    projectRoot: options.targetDir,
+    agentIds: options.agentIds,
+    catalog,
+    runPostInstall: options.runPostInstall,
+    postInstallNotes: options.postInstallNotes,
+  });
 
-  writeAgentsIndex(options.targetDir, installed, options.postInstallNotes);
-
-  const postInstall = installed.flatMap((a) => a.post ?? []);
-  if (options.runPostInstall && postInstall.length) {
-    const { spawnSync } = await import("node:child_process");
-    for (const cmd of postInstall) {
-      const result = spawnSync(cmd, {
-        cwd: options.targetDir,
-        shell: true,
-        encoding: "utf8",
-        stdio: "inherit",
-      });
-      if (result.status !== 0) {
-        throw new Error(`Post-install failed: ${cmd}`);
-      }
-    }
-  }
-
-  return { postInstall };
+  return { postInstall: result.postInstall };
 }

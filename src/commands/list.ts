@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { filterAgentsForStacks } from "../agents/filter.js";
 import { listPresets } from "../agents/presets.js";
+import { shortDescription } from "../agents/project-agents.js";
 import { loadMergedCatalog, userCatalogRoot } from "../catalog/load.js";
 
 export const listCommand = defineCommand({
@@ -63,8 +64,9 @@ export const listCommand = defineCommand({
     if (presets.length) {
       console.log("\nPresets");
       for (const preset of presets) {
+        const desc = shortDescription(preset.description, 60);
         console.log(
-          `  - ${preset.id}\t${preset.name}\t${preset.agents.length} agents`,
+          `  - ${preset.id}\t${preset.name}\t${preset.agents.length} agents${desc ? `\t${desc}` : ""}`,
         );
       }
     }

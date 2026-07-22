@@ -1,314 +1,322 @@
-import { existsSync, mkdirSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { defineCommand } from "citty";
 import * as p from "@clack/prompts";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { filterAgentsForStacks, resolveProjectStacks } from "../agents/filter.js";
 import {
-  ensureUserCatalog,
-  findArchitecture,
+  expandPresetAgents,
+  listPresets,
+  mergeAgentIds,
+} from "../agents/presets.js";
+import {
+  formatAgentLabels,
+  installAgentsIntoProject,
+  loadArkProject,
+  postInstallTipLines,
+  shortDescription,
+} from "../agents/project-agents.js";
+import {
   loadMergedCatalog,
-  loadRegistry,
   readYamlFile,
   userCatalogRoot,
-  writeUserRegistry,
 } from "../catalog/load.js";
-import { resolveSourcePack } from "../catalog/resolve-pack.js";
-import { copyDir } from "../fs/files.js";
-import type {
-  ArchitectureEntry,
-  ArchitectureManifest,
-  ProjectEntry,
-  ProjectManifest,
-  Registry,
-} from "../types.js";
+import { resolvePackRoot } from "../catalog/resolve-pack.js";
+import type { ProjectManifest, Registry } from "../types.js";
+import {
+  addArchitectureCommand,
+  addProjectCommand,
+} from "./add-packs.js";
 
-function upsertProjectEntry(registry: Registry, entry: ProjectEntry): Registry {
-  const projects = [...(registry.projects ?? [])];
-  const idx = projects.findIndex((p) => p.id === entry.id);
-  if (idx >= 0) projects[idx] = entry;
-  else projects.push(entry);
-  return { ...registry, projects };
+function warnExclusiveGroups(registry: Registry, agentIds: string[]): void {
+  const selectedEntries = agentIds
+    .map((id) => registry.agents.find((a) => a.id === id))
+    .filter(Boolean);
+  const groups = new Map<string, string[]>();
+  for (const agent of selectedEntries) {
+    if (!agent?.exclusive_group) continue;
+    const list = groups.get(agent.exclusive_group) ?? [];
+    list.push(agent.id);
+    groups.set(agent.exclusive_group, list);
+  }
+  for (const [group, ids] of groups) {
+    if (ids.length > 1) {
+      p.log.warn(
+        `Exclusive group "${group}" has multiple agents selected (${ids.join(", ")}). They overlap; consider keeping one.`,
+      );
+    }
+  }
 }
 
-function upsertArchitectureEntry(
-  registry: Registry,
-  entry: ArchitectureEntry,
-): Registry {
-  const architectures = [...(registry.architectures ?? [])];
-  const idx = architectures.findIndex((a) => a.id === entry.id);
-  if (idx >= 0) architectures[idx] = entry;
-  else architectures.push(entry);
-  return { ...registry, architectures };
-}
-
-export const addProjectCommand = defineCommand({
+export const addAgentCommand = defineCommand({
   meta: {
-    name: "project",
-    description: "Register a project template in the user catalog",
+    name: "agent",
+    description: "Install catalog agents into an existing Ark project",
   },
   args: {
-    source: {
-      type: "positional",
-      description: "Local pack path or GitHub locator (owner/repo//path@ref)",
-      required: true,
-    },
-    id: {
+    preset: {
       type: "string",
-      description: "Project id (default: from manifest)",
+      description: "Comma-separated preset ids (e.g. matt-pocock-core)",
     },
-    name: {
+    agents: {
       type: "string",
-      description: "Display name (default: from manifest)",
+      description: "Comma-separated agent ids",
+      alias: "a",
     },
-    stacks: {
+    dir: {
       type: "string",
-      description: "Comma-separated stack tags (default: manifest stack.tags)",
+      description: "Project directory (default: .)",
+      alias: "d",
+      default: ".",
     },
     catalog: {
       type: "string",
       description: "User catalog directory (default: ~/.ark/catalog)",
     },
-    force: {
+    "run-postinstall": {
       type: "boolean",
-      description: "Replace an existing user-catalog project with the same id",
+      description: "Run tool-skill post-install commands (e.g. react-doctor)",
       default: false,
     },
   },
   async run({ args }) {
-    p.intro("ark add project");
+    p.intro("ark add agent");
 
-    const userRoot = ensureUserCatalog(
-      args.catalog ? String(args.catalog) : userCatalogRoot(),
-    );
+    const projectRoot = resolve(String(args.dir ?? "."));
+    if (!existsSync(join(projectRoot, "ark.project.yaml"))) {
+      p.cancel(`No ark.project.yaml in ${projectRoot}`);
+      process.exit(1);
+    }
+
+    const userRoot = args.catalog
+      ? String(args.catalog)
+      : userCatalogRoot();
     const catalog = loadMergedCatalog({ userRoot });
     const { registry } = catalog;
 
-    let resolved;
+    let projectFile;
     try {
-      resolved = await resolveSourcePack(String(args.source));
+      projectFile = loadArkProject(projectRoot);
     } catch (error) {
       p.cancel(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
 
-    const manifestPath = join(resolved.packRoot, "manifest.yaml");
-    if (!existsSync(manifestPath)) {
-      p.cancel(`No manifest.yaml in pack: ${resolved.packRoot}`);
-      process.exit(1);
-    }
-
-    const manifest = readYamlFile<ProjectManifest>(manifestPath);
-    const projectId = (args.id as string | undefined) ?? manifest.id;
-    const projectName = (args.name as string | undefined) ?? manifest.name;
-    const stacks = args.stacks
-      ? String(args.stacks)
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : (manifest.stack.tags ?? []);
-
-    const archId = manifest.implements.architecture;
-    if (!findArchitecture(registry, archId)) {
+    const existingIds = projectFile.agents ?? [];
+    const projectId = projectFile.project.id;
+    const projectEntry = registry.projects.find((proj) => proj.id === projectId);
+    if (!projectEntry) {
       p.cancel(
-        `Architecture "${archId}" is not in the catalog. Add it first or use a known id (e.g. feature-first).`,
+        `Unknown project type "${projectId}" in ark.project.yaml. Is the catalog up to date?`,
       );
       process.exit(1);
     }
 
-    const templateRel = manifest.source.root;
-    const templateAbs = join(resolved.packRoot, templateRel);
-    if (!existsSync(templateAbs)) {
-      p.cancel(`Template root missing: ${templateAbs}`);
-      process.exit(1);
-    }
-
-    const userRegistry = loadRegistry(userRoot);
-    const existingUser = userRegistry.projects?.find((p) => p.id === projectId);
-    if (existingUser && !args.force) {
-      p.cancel(
-        `Project "${projectId}" already exists in the user catalog. Use --force to replace.`,
+    let projectPackRoot: string;
+    try {
+      projectPackRoot = await resolvePackRoot(
+        projectEntry,
+        catalog.rootFor("project", projectEntry.id),
       );
+    } catch (error) {
+      p.cancel(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
 
-    let entry: ProjectEntry;
+    const projectManifest = readYamlFile<ProjectManifest>(
+      join(projectPackRoot, "manifest.yaml"),
+    );
+    const stacks = resolveProjectStacks({
+      registryStacks: projectEntry.stacks,
+      manifestTags: projectManifest.stack.tags,
+    });
 
-    if (resolved.kind === "local") {
-      const dest = join(userRoot, "projects", projectId);
-      if (existsSync(dest)) {
-        if (!args.force) {
-          p.cancel(
-            `Pack directory already exists: ${dest}. Use --force to replace.`,
-          );
-          process.exit(1);
-        }
-        rmSync(dest, { recursive: true, force: true });
+    p.log.info(`Project: ${projectFile.project.name} (${projectId})`);
+    p.log.info(`Stacks: ${stacks.join(", ") || "(none)"}`);
+    if (existingIds.length) {
+      p.log.info(
+        `Already installed: ${formatAgentLabels(registry.agents, existingIds)}`,
+      );
+    }
+
+    const compatible = filterAgentsForStacks(registry.agents, stacks).filter(
+      (a) => !existingIds.includes(a.id),
+    );
+    const presets = listPresets(registry);
+
+    let presetIds: string[] = args.preset
+      ? String(args.preset).split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    if (!args.preset && !args.agents && presets.length > 0) {
+      const selectedPreset = await p.select({
+        message: "Agent preset (optional)",
+        options: [
+          { value: "", label: "None (pick agents individually)" },
+          ...presets.map((preset) => ({
+            value: preset.id,
+            label: `${preset.name} (${preset.id})`,
+            hint:
+              shortDescription(preset.description) ??
+              `${preset.agents.length} agents`,
+          })),
+        ],
+      });
+      if (p.isCancel(selectedPreset)) {
+        p.cancel("Cancelled");
+        process.exit(0);
       }
-      mkdirSync(dirname(dest), { recursive: true });
-      copyDir(resolved.packRoot, dest);
-
-      entry = {
-        id: projectId,
-        name: projectName,
-        version: manifest.version,
-        implements: archId,
-        path: `projects/${projectId}`,
-        source: "local",
-        stacks,
-      };
-    } else {
-      entry = {
-        id: projectId,
-        name: projectName,
-        version: manifest.version,
-        implements: archId,
-        source: "github",
-        github: resolved.github,
-        stacks,
-      };
+      if (selectedPreset) presetIds = [selectedPreset as string];
     }
 
-    writeUserRegistry(userRoot, upsertProjectEntry(userRegistry, entry));
-
-    p.log.success(
-      resolved.kind === "local"
-        ? `Registered local project "${projectId}" → ${userRoot}`
-        : `Registered GitHub project "${projectId}" (${resolved.github})`,
-    );
-    p.outro(`Create with: ark create <name> --project ${projectId}`);
-  },
-});
-
-export const addArchitectureCommand = defineCommand({
-  meta: {
-    name: "architecture",
-    description: "Register an architecture pack in the user catalog",
-  },
-  args: {
-    source: {
-      type: "positional",
-      description: "Local pack path or GitHub locator (owner/repo//path@ref)",
-      required: true,
-    },
-    id: {
-      type: "string",
-      description: "Architecture id (default: from manifest)",
-    },
-    name: {
-      type: "string",
-      description: "Display name (default: from manifest)",
-    },
-    catalog: {
-      type: "string",
-      description: "User catalog directory (default: ~/.ark/catalog)",
-    },
-    force: {
-      type: "boolean",
-      description:
-        "Replace an existing user-catalog architecture with the same id",
-      default: false,
-    },
-  },
-  async run({ args }) {
-    p.intro("ark add architecture");
-
-    const userRoot = ensureUserCatalog(
-      args.catalog ? String(args.catalog) : userCatalogRoot(),
-    );
-
-    let resolved;
-    try {
-      resolved = await resolveSourcePack(String(args.source));
-    } catch (error) {
-      p.cancel(error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
-
-    const manifestPath = join(resolved.packRoot, "manifest.yaml");
-    if (!existsSync(manifestPath)) {
-      p.cancel(`No manifest.yaml in pack: ${resolved.packRoot}`);
-      process.exit(1);
-    }
-
-    const manifest = readYamlFile<ArchitectureManifest>(manifestPath);
-    const archId = (args.id as string | undefined) ?? manifest.id;
-    const archName = (args.name as string | undefined) ?? manifest.name;
-
-    const requiredFiles = [
-      manifest.files.layout,
-      manifest.files.tree,
-      manifest.files.conventions,
-    ];
-    if (manifest.files.agent_hints) {
-      requiredFiles.push(manifest.files.agent_hints);
-    }
-    for (const rel of requiredFiles) {
-      const abs = join(resolved.packRoot, rel);
-      if (!existsSync(abs)) {
-        p.cancel(`Architecture pack missing declared file: ${rel}`);
+    let presetAgentIds: string[] = [];
+    let presetNotes: string[] = [];
+    if (presetIds.length) {
+      try {
+        const expanded = expandPresetAgents(registry, presetIds);
+        presetAgentIds = expanded.agentIds.filter(
+          (id) => !existingIds.includes(id),
+        );
+        presetNotes = expanded.notes;
+        const skipped = expanded.agentIds.filter((id) =>
+          existingIds.includes(id),
+        );
+        if (presetAgentIds.length) {
+          p.log.info(
+            `Preset agents: ${formatAgentLabels(registry.agents, presetAgentIds)}`,
+          );
+        }
+        if (skipped.length) {
+          p.log.info(
+            `Already present (skipped): ${formatAgentLabels(registry.agents, skipped)}`,
+          );
+        }
+      } catch (error) {
+        p.cancel(error instanceof Error ? error.message : String(error));
         process.exit(1);
       }
     }
 
-    const userRegistry = loadRegistry(userRoot);
-    const existingUser = userRegistry.architectures?.find((a) => a.id === archId);
-    if (existingUser && !args.force) {
-      p.cancel(
-        `Architecture "${archId}" already exists in the user catalog. Use --force to replace.`,
+    let extraAgentIds: string[] = args.agents
+      ? String(args.agents)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    const presetFromCli = Boolean(args.preset);
+    if (!args.agents && !presetFromCli) {
+      const remaining = compatible.filter(
+        (a) => !presetAgentIds.includes(a.id),
       );
+      if (remaining.length === 0) {
+        if (!presetAgentIds.length) {
+          p.log.warn(
+            existingIds.length
+              ? "No additional agents match this project stack"
+              : "No agents match this project stack",
+          );
+        }
+      } else {
+        const selectedAgents = await p.multiselect({
+          message: presetAgentIds.length
+            ? "Additional agents (optional)"
+            : "Agents to add (remote packs are downloaded on select)",
+          options: remaining.map((agent) => ({
+            value: agent.id,
+            label: `${agent.name} (${agent.id})`,
+            hint: [
+              agent.kind,
+              agent.source === "github" ? "github" : null,
+              agent.group ?? null,
+              agent.exclusive_group ? `group:${agent.exclusive_group}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          })),
+          required: false,
+        });
+        if (p.isCancel(selectedAgents)) {
+          p.cancel("Cancelled");
+          process.exit(0);
+        }
+        extraAgentIds = selectedAgents as string[];
+      }
+    }
+
+    if (args.agents) {
+      const unknown = extraAgentIds.filter(
+        (id) => !registry.agents.some((a) => a.id === id),
+      );
+      if (unknown.length) {
+        p.cancel(`Unknown agent(s): ${unknown.join(", ")}`);
+        process.exit(1);
+      }
+      const already = extraAgentIds.filter((id) => existingIds.includes(id));
+      if (already.length) {
+        p.log.info(
+          `Already present (skipped): ${formatAgentLabels(registry.agents, already)}`,
+        );
+      }
+      extraAgentIds = extraAgentIds.filter((id) => !existingIds.includes(id));
+    }
+
+    const toAdd = mergeAgentIds(presetAgentIds, extraAgentIds);
+    if (!toAdd.length) {
+      p.outro("Nothing to add");
+      return;
+    }
+
+    warnExclusiveGroups(registry, mergeAgentIds(existingIds, toAdd));
+
+    const spinner = p.spinner();
+    spinner.start(
+      toAdd.some(
+        (id) => registry.agents.find((a) => a.id === id)?.source === "github",
+      )
+        ? "Downloading + installing agents"
+        : "Installing agents",
+    );
+
+    try {
+      const result = await installAgentsIntoProject({
+        projectRoot,
+        agentIds: toAdd,
+        catalog,
+        mergeWithExisting: true,
+        runPostInstall: Boolean(args["run-postinstall"]),
+        runPostInstallFor: toAdd,
+        postInstallNotes: presetNotes,
+      });
+      spinner.stop(
+        `Added ${result.addedIds.length} agent${result.addedIds.length === 1 ? "" : "s"}`,
+      );
+      for (const line of postInstallTipLines({
+        postInstall: result.postInstall,
+        notes: presetNotes,
+        ran: Boolean(args["run-postinstall"]),
+        flagHint: "ark add agent --run-postinstall",
+      })) {
+        p.log.info(line);
+      }
+      p.outro(
+        `Agents in project: ${formatAgentLabels(registry.agents, result.agentIds)}`,
+      );
+    } catch (error) {
+      spinner.stop("Failed");
+      p.cancel(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
-
-    let entry: ArchitectureEntry;
-
-    if (resolved.kind === "local") {
-      const dest = join(userRoot, "architectures", archId);
-      if (existsSync(dest)) {
-        if (!args.force) {
-          p.cancel(
-            `Pack directory already exists: ${dest}. Use --force to replace.`,
-          );
-          process.exit(1);
-        }
-        rmSync(dest, { recursive: true, force: true });
-      }
-      mkdirSync(dirname(dest), { recursive: true });
-      copyDir(resolved.packRoot, dest);
-
-      entry = {
-        id: archId,
-        name: archName,
-        version: manifest.version,
-        path: `architectures/${archId}`,
-        source: "local",
-      };
-    } else {
-      entry = {
-        id: archId,
-        name: archName,
-        version: manifest.version,
-        source: "github",
-        github: resolved.github,
-      };
-    }
-
-    writeUserRegistry(userRoot, upsertArchitectureEntry(userRegistry, entry));
-
-    p.log.success(
-      resolved.kind === "local"
-        ? `Registered local architecture "${archId}" → ${userRoot}`
-        : `Registered GitHub architecture "${archId}" (${resolved.github})`,
-    );
-    p.outro(`Listed with: ark list`);
   },
 });
 
 export const addCommand = defineCommand({
   meta: {
     name: "add",
-    description: "Add packs to the user catalog",
+    description: "Add packs to the user catalog, or agents to a project",
   },
   subCommands: {
     project: addProjectCommand,
     architecture: addArchitectureCommand,
+    agent: addAgentCommand,
   },
 });

@@ -9,13 +9,38 @@ import {
   mergeAgentIds,
 } from "../agents/presets.js";
 import {
+  formatAgentLabels,
+  postInstallTipLines,
+  shortDescription,
+} from "../agents/project-agents.js";
+import {
   loadMergedCatalog,
   readYamlFile,
   userCatalogRoot,
 } from "../catalog/load.js";
 import { createProject } from "../create/scaffold.js";
 import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
-import type { ProjectManifest } from "../types.js";
+import type { ProjectManifest, Registry } from "../types.js";
+
+function warnExclusiveGroups(registry: Registry, agentIds: string[]): void {
+  const selectedEntries = agentIds
+    .map((id) => registry.agents.find((a) => a.id === id))
+    .filter(Boolean);
+  const groups = new Map<string, string[]>();
+  for (const agent of selectedEntries) {
+    if (!agent?.exclusive_group) continue;
+    const list = groups.get(agent.exclusive_group) ?? [];
+    list.push(agent.id);
+    groups.set(agent.exclusive_group, list);
+  }
+  for (const [group, ids] of groups) {
+    if (ids.length > 1) {
+      p.log.warn(
+        `Exclusive group "${group}" has multiple agents selected (${ids.join(", ")}). They overlap; consider keeping one.`,
+      );
+    }
+  }
+}
 
 export const createCommand = defineCommand({
   meta: {
@@ -225,7 +250,9 @@ export const createCommand = defineCommand({
           ...presets.map((preset) => ({
             value: preset.id,
             label: `${preset.name} (${preset.id})`,
-            hint: `${preset.agents.length} skills`,
+            hint:
+              shortDescription(preset.description) ??
+              `${preset.agents.length} agents`,
           })),
         ],
       });
@@ -242,7 +269,9 @@ export const createCommand = defineCommand({
       const expanded = expandPresetAgents(registry, presetIds);
       presetAgentIds = expanded.agentIds;
       presetNotes = expanded.notes;
-      p.log.info(`Preset agents: ${presetAgentIds.join(", ")}`);
+      p.log.info(
+        `Preset agents: ${formatAgentLabels(registry.agents, presetAgentIds)}`,
+      );
     }
 
     let extraAgentIds: string[] = args.agents
@@ -283,24 +312,7 @@ export const createCommand = defineCommand({
     }
 
     const agentIds = mergeAgentIds(presetAgentIds, extraAgentIds);
-
-    const selectedEntries = agentIds
-      .map((id) => registry.agents.find((a) => a.id === id))
-      .filter(Boolean);
-    const groups = new Map<string, string[]>();
-    for (const agent of selectedEntries) {
-      if (!agent?.exclusive_group) continue;
-      const list = groups.get(agent.exclusive_group) ?? [];
-      list.push(agent.id);
-      groups.set(agent.exclusive_group, list);
-    }
-    for (const [group, ids] of groups) {
-      if (ids.length > 1) {
-        p.log.warn(
-          `Exclusive group "${group}" has multiple agents selected (${ids.join(", ")}). They overlap; consider keeping one.`,
-        );
-      }
-    }
+    warnExclusiveGroups(registry, agentIds);
 
     const targetDir = resolve((args.dir as string | undefined) ?? `./${name}`);
     if (existsSync(targetDir)) {
@@ -327,11 +339,13 @@ export const createCommand = defineCommand({
         postInstallNotes: presetNotes,
       });
       spinner.stop("Project created");
-      if (
-        (result.postInstall.length || presetNotes.length) &&
-        !args["run-postinstall"]
-      ) {
-        p.log.info("See .agents/POSTINSTALL.md for next steps");
+      for (const line of postInstallTipLines({
+        postInstall: result.postInstall,
+        notes: presetNotes,
+        ran: Boolean(args["run-postinstall"]),
+        flagHint: "ark create --run-postinstall",
+      })) {
+        p.log.info(line);
       }
     } catch (error) {
       spinner.stop("Failed");

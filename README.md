@@ -9,6 +9,7 @@ ark list
 ark list --stack react,ui
 ark add architecture ./my-arch
 ark add project ./my-template
+ark add agent --agents karpathy
 ```
 
 ## Concepts
@@ -55,7 +56,21 @@ Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 ```bash
 node dist/cli.js list --group matt-pocock
 node dist/cli.js create demo --project ts-lib --preset matt-pocock-core
+node dist/cli.js add agent --dir ./demo --agents no-ai-slop
 ```
+
+## Post-install
+
+Some agents (`tool-skill`) and presets declare follow-up commands or notes (e.g. `npx react-doctor`, gstack `./setup`, Matt Pocock `/setup-matt-pocock-skills`).
+
+By default Ark writes them to `.agents/POSTINSTALL.md` and does **not** run shell commands. Pass `--run-postinstall` to execute those commands during `create` or `add agent`:
+
+```bash
+node dist/cli.js create web --project react-next --agents react-doctor --run-postinstall
+node dist/cli.js add agent --dir ./web --agents react-doctor --run-postinstall
+```
+
+Preset notes (Matt Pocock, gstack) land in the same `POSTINSTALL.md` Notes section.
 
 ## User catalog
 
@@ -89,6 +104,10 @@ ark add project ./pack --id mon-stack --stacks react,typescript
 ark list
 ark create app --architecture my-arch --project mon-stack
 ark check ./app
+
+# Add agents later (into an existing scaffold)
+ark add agent --dir ./app --preset matt-pocock-core
+ark add agent --dir ./app --agents karpathy,feature-owner
 ```
 
 A project pack needs `manifest.yaml` (with `implements.architecture` already in the catalog) and a template root (`source.root`, usually `./template`). An architecture pack needs `manifest.yaml` plus the declared layout/tree/conventions files. Layer-only arches use roots + import deny rules; repeating units use optional `modules` in `tree.schema.yaml`.
@@ -107,7 +126,7 @@ node dist/cli.js create app --project ts-lib --preset gstack-full
 node dist/cli.js list --group gstack
 ```
 
-Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans ton agent.
+Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans ton agent (voir aussi `.agents/POSTINSTALL.md`).
 
 ## Architectures
 
@@ -146,4 +165,4 @@ TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet
 
 ## Status
 
-v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`).
+v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add` (architecture / project / agent), multi-architecture create (`feature-first`, `hexagonal`, `clean`), optional `--run-postinstall`.
