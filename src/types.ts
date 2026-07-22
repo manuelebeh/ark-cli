@@ -24,8 +24,14 @@ export type ArchitectureEntry = {
   id: string;
   name: string;
   version: string;
-  path: string;
+  /** Catalog-relative path (required when source=local). */
+  path?: string;
   source: "local" | "github";
+  /**
+   * GitHub locator: `owner/repo//path@ref` or `github:owner/repo//path@ref`.
+   * Required when source=github.
+   */
+  github?: string;
   ref?: string;
   repo?: string;
 };

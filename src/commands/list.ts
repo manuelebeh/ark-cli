@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import { filterAgentsForStacks } from "../agents/filter.js";
 import { listPresets } from "../agents/presets.js";
-import { defaultCatalogRoot, loadRegistry } from "../catalog/load.js";
+import { loadMergedCatalog, userCatalogRoot } from "../catalog/load.js";
 
 export const listCommand = defineCommand({
   meta: {
@@ -17,12 +17,24 @@ export const listCommand = defineCommand({
     group: {
       type: "string",
       description: "Filter agents by group (e.g. matt-pocock)",
-      alias: "g",
+    },
+    catalog: {
+      type: "string",
+      description: "User catalog directory (default: ~/.ark/catalog)",
     },
   },
   run({ args }) {
-    const registry = loadRegistry(defaultCatalogRoot());
-    console.log(`Catalog: ${registry.name} v${registry.version}\n`);
+    const userRoot = args.catalog
+      ? String(args.catalog)
+      : userCatalogRoot();
+    const { registry, userRoot: loadedUser } = loadMergedCatalog({
+      userRoot,
+    });
+    console.log(`Catalog: ${registry.name} v${registry.version}`);
+    if (loadedUser) {
+      console.log(`User catalog: ${loadedUser}`);
+    }
+    console.log("");
 
     console.log("Architectures");
     for (const arch of registry.architectures) {
@@ -32,8 +44,12 @@ export const listCommand = defineCommand({
     console.log("\nProjects");
     for (const project of registry.projects) {
       const stacks = project.stacks?.join(",") ?? "-";
+      const origin =
+        project.source === "github"
+          ? project.github ?? "github"
+          : project.path ?? "local";
       console.log(
-        `  - ${project.id}\t${project.name}\tarch:${project.implements}\tstacks:${stacks}\tv${project.version}`,
+        `  - ${project.id}\t${project.name}\tarch:${project.implements}\tstacks:${stacks}\t${project.source}\t${origin}\tv${project.version}`,
       );
     }
 

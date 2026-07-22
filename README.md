@@ -7,6 +7,7 @@ ark create my-app
 ark check
 ark list
 ark list --stack react,ui
+ark add project ./my-template
 ```
 
 ## Concepts
@@ -48,6 +49,35 @@ Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 node dist/cli.js list --group matt-pocock
 node dist/cli.js create demo --project ts-lib --preset matt-pocock-core
 ```
+
+## User catalog
+
+Custom project types live under `~/.ark/catalog` (override with `ARK_CATALOG_DIR` or `--catalog`). They merge with the built-in catalog; same id → user wins.
+
+```text
+~/.ark/catalog/
+  registry.yaml
+  projects/
+    mon-stack/
+      manifest.yaml
+      template/
+```
+
+Register a pack:
+
+```bash
+# Local pack (copied into ~/.ark/catalog/projects/<id>)
+ark add project ./path/to/pack
+
+# GitHub pack (locator stored; fetched on create)
+ark add project me/ark-templates//projects/mon-stack@main
+
+ark add project ./pack --id mon-stack --stacks react,typescript
+ark list
+ark create app --project mon-stack
+```
+
+A pack needs `manifest.yaml` (with `implements.architecture` already in the catalog, e.g. `feature-first`) and a template root (`source.root`, usually `./template`).
 
 ## Presets
 
@@ -92,4 +122,4 @@ TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet
 
 ## Status
 
-v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install.
+v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add project`.

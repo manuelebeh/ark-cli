@@ -2,44 +2,70 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { installAgent, writeAgentsIndex } from "../agents/install.js";
 import {
-  defaultCatalogRoot,
-  loadRegistry,
+  loadMergedCatalog,
   readYamlFile,
   resolveCatalogPath,
+  type LoadedCatalog,
 } from "../catalog/load.js";
+import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
 import { copyTemplateDir } from "../fs/files.js";
-import type { ArchitectureManifest, ProjectManifest } from "../types.js";
+import type {
+  ArchitectureEntry,
+  ArchitectureManifest,
+  ProjectEntry,
+  ProjectManifest,
+} from "../types.js";
 
 export type CreateOptions = {
   name: string;
   targetDir: string;
   projectId: string;
   agentIds: string[];
-  catalogRoot?: string;
+  /** Pre-loaded catalog; if omitted, loads merged built-in + user. */
+  catalog?: LoadedCatalog;
+  /** Override user catalog root (from --catalog / ARK_CATALOG_DIR). */
+  userCatalogRoot?: string;
   /** When true, run tool-skill post-install commands. */
   runPostInstall?: boolean;
   /** Extra human notes appended to .agents/POSTINSTALL.md */
   postInstallNotes?: string[];
 };
 
+async function resolvePackRoot(
+  entry: ProjectEntry | ArchitectureEntry,
+  catalogRoot: string,
+): Promise<string> {
+  if (entry.source === "github") {
+    if (!entry.github) {
+      throw new Error(`Entry ${entry.id} is remote but missing github locator`);
+    }
+    return fetchGithubSource(parseGithubSource(entry.github));
+  }
+  if (!entry.path) {
+    throw new Error(`Local entry ${entry.id} missing path`);
+  }
+  return resolveCatalogPath(catalogRoot, entry.path);
+}
+
 export async function createProject(options: CreateOptions): Promise<{
   postInstall: string[];
 }> {
-  const catalogRoot = options.catalogRoot ?? defaultCatalogRoot();
-  const registry = loadRegistry(catalogRoot);
+  const catalog =
+    options.catalog ??
+    loadMergedCatalog({ userRoot: options.userCatalogRoot });
+  const { registry } = catalog;
 
   const projectEntry = registry.projects.find((p) => p.id === options.projectId);
   if (!projectEntry) {
     throw new Error(`Unknown project type: ${options.projectId}`);
   }
 
+  const projectCatalogRoot = catalog.rootFor("project", projectEntry.id);
+  const projectPackRoot = await resolvePackRoot(projectEntry, projectCatalogRoot);
   const projectManifest = readYamlFile<ProjectManifest>(
-    resolveCatalogPath(catalogRoot, join(projectEntry.path, "manifest.yaml")),
+    join(projectPackRoot, "manifest.yaml"),
   );
-  const templateRoot = resolveCatalogPath(
-    catalogRoot,
-    join(projectEntry.path, projectManifest.source.root),
-  );
+  const templateRoot = join(projectPackRoot, projectManifest.source.root);
 
   const archId = projectManifest.implements.architecture;
   const archEntry = registry.architectures.find((a) => a.id === archId);
@@ -47,7 +73,8 @@ export async function createProject(options: CreateOptions): Promise<{
     throw new Error(`Architecture not found in registry: ${archId}`);
   }
 
-  const archDir = resolveCatalogPath(catalogRoot, archEntry.path);
+  const archCatalogRoot = catalog.rootFor("architecture", archEntry.id);
+  const archDir = await resolvePackRoot(archEntry, archCatalogRoot);
   const archManifest = readYamlFile<ArchitectureManifest>(
     join(archDir, "manifest.yaml"),
   );
@@ -88,7 +115,7 @@ export async function createProject(options: CreateOptions): Promise<{
     installed.push(
       await installAgent({
         agent: agentEntry,
-        catalogRoot,
+        catalogRoot: catalog.rootFor("agent", agentId),
         projectRoot: options.targetDir,
       }),
     );

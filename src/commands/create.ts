@@ -9,12 +9,12 @@ import {
   mergeAgentIds,
 } from "../agents/presets.js";
 import {
-  defaultCatalogRoot,
-  loadRegistry,
+  loadMergedCatalog,
   readYamlFile,
-  resolveCatalogPath,
+  userCatalogRoot,
 } from "../catalog/load.js";
 import { createProject } from "../create/scaffold.js";
+import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
 import type { ProjectManifest } from "../types.js";
 
 export const createCommand = defineCommand({
@@ -47,6 +47,10 @@ export const createCommand = defineCommand({
       description: "Target directory (default: ./<name>)",
       alias: "d",
     },
+    catalog: {
+      type: "string",
+      description: "User catalog directory (default: ~/.ark/catalog)",
+    },
     "run-postinstall": {
       type: "boolean",
       description: "Run tool-skill post-install commands (e.g. react-doctor)",
@@ -56,8 +60,11 @@ export const createCommand = defineCommand({
   async run({ args }) {
     p.intro("ark create");
 
-    const catalogRoot = defaultCatalogRoot();
-    const registry = loadRegistry(catalogRoot);
+    const userRoot = args.catalog
+      ? String(args.catalog)
+      : userCatalogRoot();
+    const catalog = loadMergedCatalog({ userRoot });
+    const { registry } = catalog;
 
     let name = args.name;
     if (!name) {
@@ -80,7 +87,7 @@ export const createCommand = defineCommand({
         options: registry.projects.map((proj) => ({
           value: proj.id,
           label: `${proj.name} (${proj.id})`,
-          hint: `arch: ${proj.implements}`,
+          hint: `arch: ${proj.implements}${proj.source === "github" ? " · github" : ""}`,
         })),
       });
       if (p.isCancel(selected)) {
@@ -96,8 +103,31 @@ export const createCommand = defineCommand({
       process.exit(1);
     }
 
+    let projectPackRoot: string;
+    try {
+      if (projectEntry.source === "github") {
+        if (!projectEntry.github) {
+          throw new Error(`Project ${projectEntry.id} missing github locator`);
+        }
+        projectPackRoot = await fetchGithubSource(
+          parseGithubSource(projectEntry.github),
+        );
+      } else {
+        if (!projectEntry.path) {
+          throw new Error(`Project ${projectEntry.id} missing path`);
+        }
+        projectPackRoot = join(
+          catalog.rootFor("project", projectEntry.id),
+          projectEntry.path,
+        );
+      }
+    } catch (error) {
+      p.cancel(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+
     const projectManifest = readYamlFile<ProjectManifest>(
-      resolveCatalogPath(catalogRoot, join(projectEntry.path, "manifest.yaml")),
+      join(projectPackRoot, "manifest.yaml"),
     );
     const stacks = resolveProjectStacks({
       registryStacks: projectEntry.stacks,
@@ -207,8 +237,9 @@ export const createCommand = defineCommand({
 
     const spinner = p.spinner();
     spinner.start(
-      agentIds.some((id) => registry.agents.find((a) => a.id === id)?.source === "github")
-        ? "Downloading agents + scaffolding"
+      agentIds.some((id) => registry.agents.find((a) => a.id === id)?.source === "github") ||
+        projectEntry.source === "github"
+        ? "Downloading + scaffolding"
         : "Scaffolding project",
     );
     try {
@@ -217,7 +248,8 @@ export const createCommand = defineCommand({
         targetDir,
         projectId,
         agentIds,
-        catalogRoot,
+        catalog,
+        userCatalogRoot: userRoot,
         runPostInstall: Boolean(args["run-postinstall"]),
         postInstallNotes: presetNotes,
       });
