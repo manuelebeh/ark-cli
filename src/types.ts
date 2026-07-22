@@ -77,6 +77,8 @@ export type AgentEntry = {
   group?: string;
 };
 
+export type CheckSeverity = "error" | "warn";
+
 export type ArchitectureManifest = {
   schema_version: number;
   id: string;
@@ -90,7 +92,9 @@ export type ArchitectureManifest = {
     agent_hints?: string;
   };
   checks: string[];
-  default_severity: "error" | "warn";
+  default_severity: CheckSeverity;
+  /** Per-issue-code severity overrides. */
+  severity?: Partial<Record<string, CheckSeverity>>;
 };
 
 export type TreeSchema = {
@@ -113,12 +117,40 @@ export type TreeSchema = {
   allow_exceptions_file?: string;
 };
 
+export type ImportRule = {
+  from: string;
+  to: string;
+  severity?: CheckSeverity;
+};
+
 export type Conventions = {
   naming: {
     features: {
       pattern: string;
     };
   };
+  placement?: {
+    ui_for_feature?: string;
+    data_for_feature?: string;
+    cross_feature_imports?: boolean;
+    public_api?: string;
+  };
+  imports?: {
+    deny?: ImportRule[];
+    allow?: ImportRule[];
+  };
+};
+
+export type ArchitectureException = {
+  code: string;
+  path: string;
+  reason?: string;
+  /** If set, downgrade/upgrade matching issues instead of silencing them. */
+  severity?: CheckSeverity;
+};
+
+export type ArchitectureExceptions = {
+  exceptions: ArchitectureException[];
 };
 
 export type ProjectManifest = {
@@ -167,7 +199,7 @@ export type ArkProjectFile = {
 };
 
 export type CheckIssue = {
-  severity: "error" | "warn";
+  severity: CheckSeverity;
   code: string;
   message: string;
   path?: string;

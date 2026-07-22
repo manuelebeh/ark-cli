@@ -1,0 +1,13 @@
+# Copy to the project root as architecture.exceptions.yaml
+# (filename comes from tree.schema.yaml → allow_exceptions_file).
+#
+# Without severity: matching issues are silenced.
+# With severity: matching issues are rewritten to that severity.
+
+exceptions:
+  - code: cross-feature-import
+    path: features/orders/ui/LegacyForm.ts
+    reason: "migration in progress"
+  - code: forbidden-path
+    path: src/components/**
+    severity: warn

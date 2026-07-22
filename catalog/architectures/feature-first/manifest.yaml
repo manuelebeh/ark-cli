@@ -27,3 +27,9 @@ checks:
   - required_files
 
 default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  feature-naming: warn
+  missing-feature-file: error
+  cross-feature-import: error
