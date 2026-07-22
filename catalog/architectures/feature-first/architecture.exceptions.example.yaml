@@ -5,7 +5,7 @@
 # With severity: matching issues are rewritten to that severity.
 
 exceptions:
-  - code: cross-feature-import
+  - code: cross-module-import
     path: features/orders/ui/LegacyForm.ts
     reason: "migration in progress"
   - code: forbidden-path

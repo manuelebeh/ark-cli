@@ -8,8 +8,8 @@ roots:
     - docs/
     - src/
 
-feature:
-  path: features/:feature_name
+modules:
+  path: features/:name
   required_children:
     - index.ts
   optional_children:
@@ -19,7 +19,7 @@ feature:
     - api/
     - testing/
   forbid:
-    - features/:feature_name/features/
+    - features/:name/features/
 
 shared:
   path: shared/

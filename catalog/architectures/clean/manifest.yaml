@@ -1,11 +1,11 @@
 schema_version: 1
 
-id: feature-first
-name: Feature-first
+id: clean
+name: Clean
 version: 0.1.0
 description: >
-  Domain code lives in features/<name>. Shared code is truly cross-cutting.
-  Cross-feature access goes through each feature's public API only.
+  Layered clean architecture: domain at the center, application use cases,
+  infrastructure at the edge. Dependencies point inward only.
 
 requires:
   project_manifest: ">=1"
@@ -30,7 +30,4 @@ default_severity: error
 severity:
   missing-root: error
   forbidden-path: error
-  module-naming: warn
-  missing-module-file: error
   denied-import: error
-  cross-module-import: error

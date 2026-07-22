@@ -10,12 +10,40 @@ architectures:
     path: architectures/feature-first
     source: local
 
+  - id: hexagonal
+    name: Hexagonal
+    version: 0.1.0
+    path: architectures/hexagonal
+    source: local
+
+  - id: clean
+    name: Clean
+    version: 0.1.0
+    path: architectures/clean
+    source: local
+
 projects:
   - id: ts-lib
     name: TypeScript library
     version: 0.1.0
     implements: feature-first
     path: projects/ts-lib
+    source: local
+    stacks: [lib, typescript]
+
+  - id: ts-lib-hexagonal
+    name: TypeScript library (hexagonal)
+    version: 0.1.0
+    implements: hexagonal
+    path: projects/ts-lib-hexagonal
+    source: local
+    stacks: [lib, typescript]
+
+  - id: ts-lib-clean
+    name: TypeScript library (clean)
+    version: 0.1.0
+    implements: clean
+    path: projects/ts-lib-clean
     source: local
     stacks: [lib, typescript]
 

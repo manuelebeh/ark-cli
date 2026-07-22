@@ -1,5 +1,5 @@
 naming:
-  features:
+  modules:
     pattern: "^[a-z][a-z0-9_]*$"
   files:
     components: "PascalCase"
@@ -7,10 +7,8 @@ naming:
     tests: "**/*.{test,spec}.*"
 
 placement:
-  ui_for_feature: features/:feature/ui
-  data_for_feature: features/:feature/data
-  cross_feature_imports: false
-  public_api: features/:feature/index.*
+  cross_module_imports: false
+  public_api: features/:name/index.*
 
 imports:
   deny:

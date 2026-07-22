@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews structure and imports against the clean architecture contract
+
+brief: |
+  Follow the clean architecture contract.
+  Domain has no dependencies on application or infrastructure.
+  Application depends on domain only; infrastructure depends inward.

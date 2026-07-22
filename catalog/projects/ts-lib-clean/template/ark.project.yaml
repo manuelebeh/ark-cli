@@ -1,0 +1,7 @@
+schema_version: 1
+implements:
+  architecture: clean
+  architecture_version: 0.1.0
+project:
+  id: ts-lib-clean
+  name: "{{project_name}}"

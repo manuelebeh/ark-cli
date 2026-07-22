@@ -1,0 +1,7 @@
+schema_version: 1
+implements:
+  architecture: hexagonal
+  architecture_version: 0.1.0
+project:
+  id: ts-lib-hexagonal
+  name: "{{project_name}}"

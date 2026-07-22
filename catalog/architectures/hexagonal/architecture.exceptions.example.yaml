@@ -1,0 +1,9 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: denied-import
+    path: domain/legacy/Bridge.ts
+    reason: "temporary bridge during migration"
+  - code: forbidden-path
+    path: src/services/**
+    severity: warn

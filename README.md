@@ -15,9 +15,11 @@ ark add project ./my-template
 
 | Concept | Role |
 |---|---|
-| Architecture | Contract (`feature-first`, …): layout, naming, forbidden paths |
+| Architecture | Contract (`feature-first`, `hexagonal`, `clean`, …): layout, naming, forbidden paths, import rules |
 | Project type | Template that implements an architecture (+ stack tags) |
 | Agent | Portable pack: local manifest, remote guidelines, Agent Skills, or tool-skills |
+
+At `ark create`, you pick an **architecture** first, then a project type that implements it. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
 
 ## Agent kinds
 
@@ -38,11 +40,15 @@ npm run build
 node dist/cli.js list
 node dist/cli.js list --stack lib
 node dist/cli.js list --stack react,next
-node dist/cli.js create demo --project ts-lib --agents karpathy,feature-owner
+node dist/cli.js create demo --architecture feature-first --project ts-lib --agents karpathy,feature-owner
+node dist/cli.js create hex --architecture hexagonal --project ts-lib-hexagonal
+node dist/cli.js create clean-demo --architecture clean --project ts-lib-clean
 node dist/cli.js create web --project react-next
 node dist/cli.js create api --project laravel-app
 node dist/cli.js check ./demo
 ```
+
+`--project` alone derives the architecture from the project type. `--architecture` / `--arch` filters project types (or must match `--project` when both are set).
 
 Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 
@@ -81,11 +87,11 @@ ark add project me/ark-templates//projects/mon-stack@main
 
 ark add project ./pack --id mon-stack --stacks react,typescript
 ark list
-ark create app --project mon-stack
+ark create app --architecture my-arch --project mon-stack
 ark check ./app
 ```
 
-A project pack needs `manifest.yaml` (with `implements.architecture` already in the catalog) and a template root (`source.root`, usually `./template`). An architecture pack needs `manifest.yaml` plus the declared layout/tree/conventions files.
+A project pack needs `manifest.yaml` (with `implements.architecture` already in the catalog) and a template root (`source.root`, usually `./template`). An architecture pack needs `manifest.yaml` plus the declared layout/tree/conventions files. Layer-only arches use roots + import deny rules; repeating units use optional `modules` in `tree.schema.yaml`.
 
 ## Presets
 
@@ -103,13 +109,23 @@ node dist/cli.js list --group gstack
 
 Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans ton agent.
 
+## Architectures
+
+| Id | Style |
+|---|---|
+| `feature-first` | Domain in `features/<name>/`, public API + `shared/` |
+| `hexagonal` | `domain/`, `application/` (ports), `adapters/inbound|outbound/` |
+| `clean` | `domain/`, `application/`, `infrastructure/` |
+
 ## Project types
 
-| Id | Stacks | Unlocks (interactive) |
-|---|---|---|
-| `ts-lib` | `lib`, `typescript` | general agents only |
-| `react-next` | `react`, `next`, `web`, `ui`, `typescript` | Hallmark, Vercel React/Next skills, React Doctor |
-| `laravel-app` | `laravel`, `php` | Laravel pack |
+| Id | Architecture | Stacks | Unlocks (interactive) |
+|---|---|---|---|
+| `ts-lib` | feature-first | `lib`, `typescript` | general agents only |
+| `ts-lib-hexagonal` | hexagonal | `lib`, `typescript` | general agents only |
+| `ts-lib-clean` | clean | `lib`, `typescript` | general agents only |
+| `react-next` | feature-first | `react`, `next`, `web`, `ui`, `typescript` | Hallmark, Vercel React/Next skills, React Doctor |
+| `laravel-app` | feature-first | `laravel`, `php` | Laravel pack |
 
 TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet.
 
@@ -130,4 +146,4 @@ TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet
 
 ## Status
 
-v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add project`.
+v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`).

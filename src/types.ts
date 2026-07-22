@@ -102,7 +102,8 @@ export type TreeSchema = {
     required: string[];
     optional?: string[];
   };
-  feature: {
+  /** Repeating units (e.g. features/:name). Omit for layer-only arches. */
+  modules?: {
     path: string;
     required_children: string[];
     optional_children?: string[];
@@ -124,15 +125,15 @@ export type ImportRule = {
 };
 
 export type Conventions = {
-  naming: {
-    features: {
+  naming?: {
+    modules?: {
       pattern: string;
     };
+    files?: Record<string, string>;
   };
   placement?: {
-    ui_for_feature?: string;
-    data_for_feature?: string;
-    cross_feature_imports?: boolean;
+    /** When false, cross-module imports must go through public_api. */
+    cross_module_imports?: boolean;
     public_api?: string;
   };
   imports?: {

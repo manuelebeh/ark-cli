@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews structure and imports against the hexagonal contract
+
+brief: |
+  Follow the hexagonal architecture contract.
+  Domain has no dependencies on application or adapters.
+  Application depends on domain and ports only; adapters implement the edges.

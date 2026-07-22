@@ -1,11 +1,12 @@
 schema_version: 1
 
-id: feature-first
-name: Feature-first
+id: hexagonal
+name: Hexagonal
 version: 0.1.0
 description: >
-  Domain code lives in features/<name>. Shared code is truly cross-cutting.
-  Cross-feature access goes through each feature's public API only.
+  Domain at the center. Application defines ports.
+  Adapters implement inbound (drivers) and outbound (driven) edges.
+  Dependencies point inward.
 
 requires:
   project_manifest: ">=1"
@@ -30,7 +31,4 @@ default_severity: error
 severity:
   missing-root: error
   forbidden-path: error
-  module-naming: warn
-  missing-module-file: error
   denied-import: error
-  cross-module-import: error

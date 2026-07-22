@@ -1,0 +1,20 @@
+schema_version: 1
+id: ts-lib-hexagonal
+name: TypeScript library (hexagonal)
+version: 0.1.0
+description: Minimal TypeScript library scaffolded as hexagonal
+
+implements:
+  architecture: hexagonal
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: typescript
+  runtime: node
+  tags: [lib, typescript]
+  file_map:
+    index: index.ts
+    test_suffix: .test.ts
+
+source:
+  root: ./template

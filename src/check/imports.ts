@@ -15,20 +15,38 @@ const SKIP_DIR = /^(node_modules|dist|\.git)(\/|$)/;
 const IMPORT_RE =
   /(?:import\s+(?:type\s+)?(?:[^"'`]+?\s+from\s+)?|export\s+(?:type\s+)?(?:[^"'`]+?\s+from\s+)|(?:import|require)\s*\(\s*)['"]([^'"]+)['"]/g;
 
+export function parseModulesPath(pathPattern: string): {
+  parentDir: string;
+  placeholder: string;
+} {
+  const trimmed = pathPattern.replace(/\/$/, "");
+  const parts = trimmed.split("/");
+  const last = parts[parts.length - 1] ?? "";
+  if (!last.startsWith(":") || parts.length < 2) {
+    throw new Error(
+      `Invalid modules.path "${pathPattern}" (expected e.g. features/:name)`,
+    );
+  }
+  return {
+    parentDir: parts.slice(0, -1).join("/"),
+    placeholder: last.slice(1),
+  };
+}
+
 export function checkImports(
   projectRoot: string,
   files: string[],
   conventions: Conventions,
   manifest: ArchitectureManifest,
+  modulesPath?: string,
 ): CheckIssue[] {
   const deny = conventions.imports?.deny ?? [];
   const allow = conventions.imports?.allow ?? [];
-  const crossFeatureBlocked =
-    conventions.placement?.cross_feature_imports === false;
-  const publicApi =
-    conventions.placement?.public_api ?? "features/:feature/index.*";
+  const crossModuleBlocked =
+    conventions.placement?.cross_module_imports === false;
+  const publicApi = conventions.placement?.public_api;
 
-  if (deny.length === 0 && !crossFeatureBlocked) {
+  if (deny.length === 0 && !crossModuleBlocked) {
     return [];
   }
 
@@ -50,10 +68,14 @@ export function checkImports(
       const target = resolveRelativeImport(file, specifier, files);
       if (!target) continue;
 
-      const fromFeature = featureName(file);
-      const toFeature = featureName(target);
+      const fromModule = modulesPath
+        ? moduleName(file, modulesPath)
+        : null;
+      const toModule = modulesPath
+        ? moduleName(target, modulesPath)
+        : null;
 
-      if (fromFeature && toFeature && fromFeature === toFeature) {
+      if (fromModule && toModule && fromModule === toModule) {
         continue;
       }
 
@@ -66,10 +88,10 @@ export function checkImports(
         issues.push({
           severity: resolveSeverity(
             manifest,
-            "cross-feature-import",
+            "denied-import",
             denyRule.severity,
           ),
-          code: "cross-feature-import",
+          code: "denied-import",
           message: `Import from "${file}" to "${target}" is denied (${denyRule.from} → ${denyRule.to})`,
           path: file,
         });
@@ -77,16 +99,18 @@ export function checkImports(
       }
 
       if (
-        crossFeatureBlocked &&
-        fromFeature &&
-        toFeature &&
-        fromFeature !== toFeature &&
-        !isPublicApi(target, toFeature, publicApi)
+        crossModuleBlocked &&
+        modulesPath &&
+        publicApi &&
+        fromModule &&
+        toModule &&
+        fromModule !== toModule &&
+        !isPublicApi(target, toModule, publicApi)
       ) {
         issues.push({
-          severity: resolveSeverity(manifest, "cross-feature-import"),
-          code: "cross-feature-import",
-          message: `Cross-feature import from "${fromFeature}" to "${toFeature}" must go through the public API`,
+          severity: resolveSeverity(manifest, "cross-module-import"),
+          code: "cross-module-import",
+          message: `Cross-module import from "${fromModule}" to "${toModule}" must go through the public API`,
           path: file,
         });
       }
@@ -144,12 +168,14 @@ function resolveRelativeImport(
   }
 
   // Still return the best-effort path so glob rules can match missing files
-  // that clearly target a feature tree (e.g. ../other/ui/Foo).
+  // that clearly target a module tree (e.g. ../other/ui/Foo).
   return normalized;
 }
 
-function featureName(path: string): string | null {
-  const m = /^features\/([^/]+)\//.exec(path);
+function moduleName(path: string, modulesPath: string): string | null {
+  const { parentDir } = parseModulesPath(modulesPath);
+  const escaped = parentDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = new RegExp(`^${escaped}/([^/]+)/`).exec(path);
   return m?.[1] ?? null;
 }
 
@@ -174,9 +200,9 @@ function findMatchingRule(
 
 function isPublicApi(
   target: string,
-  feature: string,
+  name: string,
   publicApiPattern: string,
 ): boolean {
-  const pattern = publicApiPattern.replace(":feature", feature);
+  const pattern = publicApiPattern.replace(/:[a-zA-Z_][a-zA-Z0-9_]*/g, name);
   return matchSimpleGlob(target, pattern);
 }

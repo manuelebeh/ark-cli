@@ -16,7 +16,7 @@ import type {
 } from "../types.js";
 import { applyExceptions, loadExceptions } from "./exceptions.js";
 import { matchSimpleGlob } from "./glob.js";
-import { checkImports } from "./imports.js";
+import { checkImports, parseModulesPath } from "./imports.js";
 import { resolveSeverity } from "./severity.js";
 
 export type CheckResult = {
@@ -109,39 +109,49 @@ export async function checkProject(
     }
   }
 
-  const featuresDir = join(projectRoot, "features");
-  if (existsSync(featuresDir)) {
-    const featureNames = readdirSync(featuresDir).filter((name) =>
-      statSync(join(featuresDir, name)).isDirectory(),
-    );
-    const naming = new RegExp(conventions.naming.features.pattern);
+  if (tree.modules) {
+    const { parentDir } = parseModulesPath(tree.modules.path);
+    const modulesDir = join(projectRoot, parentDir);
+    if (existsSync(modulesDir)) {
+      const moduleNames = readdirSync(modulesDir).filter((name) =>
+        statSync(join(modulesDir, name)).isDirectory(),
+      );
+      const namingPattern = conventions.naming?.modules?.pattern;
+      const naming = namingPattern ? new RegExp(namingPattern) : null;
 
-    for (const name of featureNames) {
-      if (!naming.test(name)) {
-        issues.push({
-          severity: resolveSeverity(archManifest, "feature-naming"),
-          code: "feature-naming",
-          message: `Feature name "${name}" does not match ${conventions.naming.features.pattern}`,
-          path: `features/${name}`,
-        });
-      }
-
-      for (const child of tree.feature.required_children) {
-        const required = join(featuresDir, name, child);
-        if (!existsSync(required)) {
+      for (const name of moduleNames) {
+        if (naming && namingPattern && !naming.test(name)) {
           issues.push({
-            severity: resolveSeverity(archManifest, "missing-feature-file"),
-            code: "missing-feature-file",
-            message: `Feature "${name}" is missing required ${child}`,
-            path: `features/${name}/${child}`,
+            severity: resolveSeverity(archManifest, "module-naming"),
+            code: "module-naming",
+            message: `Module name "${name}" does not match ${namingPattern}`,
+            path: `${parentDir}/${name}`,
           });
+        }
+
+        for (const child of tree.modules.required_children) {
+          const required = join(modulesDir, name, child);
+          if (!existsSync(required)) {
+            issues.push({
+              severity: resolveSeverity(archManifest, "missing-module-file"),
+              code: "missing-module-file",
+              message: `Module "${name}" is missing required ${child}`,
+              path: `${parentDir}/${name}/${child}`,
+            });
+          }
         }
       }
     }
   }
 
   issues.push(
-    ...checkImports(projectRoot, files, conventions, archManifest),
+    ...checkImports(
+      projectRoot,
+      files,
+      conventions,
+      archManifest,
+      tree.modules?.path,
+    ),
   );
 
   const exceptions = loadExceptions(projectRoot, tree.allow_exceptions_file);

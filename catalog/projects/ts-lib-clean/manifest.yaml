@@ -1,0 +1,20 @@
+schema_version: 1
+id: ts-lib-clean
+name: TypeScript library (clean)
+version: 0.1.0
+description: Minimal TypeScript library scaffolded as clean architecture
+
+implements:
+  architecture: clean
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: typescript
+  runtime: node
+  tags: [lib, typescript]
+  file_map:
+    index: index.ts
+    test_suffix: .test.ts
+
+source:
+  root: ./template

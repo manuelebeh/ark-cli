@@ -33,6 +33,14 @@ export const createCommand = defineCommand({
       description: "Project type id (skips prompt)",
       alias: "p",
     },
+    architecture: {
+      type: "string",
+      description: "Architecture id (skips prompt; filters project types)",
+    },
+    arch: {
+      type: "string",
+      description: "Alias for --architecture",
+    },
     preset: {
       type: "string",
       description: "Comma-separated preset ids (e.g. matt-pocock-core)",
@@ -80,14 +88,74 @@ export const createCommand = defineCommand({
       name = answered;
     }
 
+    const archFromFlag =
+      (args.architecture as string | undefined) ??
+      (args.arch as string | undefined);
     let projectId = args.project as string | undefined;
+    let architectureId = archFromFlag;
+
+    if (projectId && architectureId) {
+      const entry = registry.projects.find((proj) => proj.id === projectId);
+      if (entry && entry.implements !== architectureId) {
+        p.cancel(
+          `Project "${projectId}" implements "${entry.implements}", not "${architectureId}"`,
+        );
+        process.exit(1);
+      }
+    }
+
+    if (projectId && !architectureId) {
+      const entry = registry.projects.find((proj) => proj.id === projectId);
+      if (!entry) {
+        p.cancel(`Unknown project type: ${projectId}`);
+        process.exit(1);
+      }
+      architectureId = entry.implements;
+    }
+
+    if (!architectureId) {
+      const selected = await p.select({
+        message: "Architecture",
+        options: registry.architectures.map((arch) => ({
+          value: arch.id,
+          label: `${arch.name} (${arch.id})`,
+          hint: arch.source === "github" ? "github" : undefined,
+        })),
+      });
+      if (p.isCancel(selected)) {
+        p.cancel("Cancelled");
+        process.exit(0);
+      }
+      architectureId = selected as string;
+    }
+
+    const archEntry = registry.architectures.find(
+      (arch) => arch.id === architectureId,
+    );
+    if (!archEntry) {
+      p.cancel(`Unknown architecture: ${architectureId}`);
+      process.exit(1);
+    }
+
+    p.log.info(`Architecture: ${archEntry.name} (${archEntry.id})`);
+
+    const projectsForArch = registry.projects.filter(
+      (proj) => proj.implements === architectureId,
+    );
+    if (projectsForArch.length === 0) {
+      p.cancel(
+        `No project types implement architecture "${architectureId}". Add one with ark add project.`,
+      );
+      process.exit(1);
+    }
+
     if (!projectId) {
       const selected = await p.select({
         message: "Project type",
-        options: registry.projects.map((proj) => ({
+        options: projectsForArch.map((proj) => ({
           value: proj.id,
           label: `${proj.name} (${proj.id})`,
-          hint: `arch: ${proj.implements}${proj.source === "github" ? " · github" : ""}`,
+          hint: proj.source === "github" ? "github" : undefined,
         })),
       });
       if (p.isCancel(selected)) {
@@ -100,6 +168,12 @@ export const createCommand = defineCommand({
     const projectEntry = registry.projects.find((proj) => proj.id === projectId);
     if (!projectEntry) {
       p.cancel(`Unknown project type: ${projectId}`);
+      process.exit(1);
+    }
+    if (projectEntry.implements !== architectureId) {
+      p.cancel(
+        `Project "${projectId}" implements "${projectEntry.implements}", not "${architectureId}"`,
+      );
       process.exit(1);
     }
 
@@ -134,7 +208,6 @@ export const createCommand = defineCommand({
       manifestTags: projectManifest.stack.tags,
     });
 
-    p.log.info(`Architecture: ${projectEntry.implements}`);
     p.log.info(`Stacks: ${stacks.join(", ") || "(none)"}`);
 
     const compatible = filterAgentsForStacks(registry.agents, stacks);
