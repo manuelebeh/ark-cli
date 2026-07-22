@@ -4,17 +4,11 @@ import { installAgent, writeAgentsIndex } from "../agents/install.js";
 import {
   loadMergedCatalog,
   readYamlFile,
-  resolveCatalogPath,
   type LoadedCatalog,
 } from "../catalog/load.js";
-import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
+import { resolvePackRoot } from "../catalog/resolve-pack.js";
 import { copyTemplateDir } from "../fs/files.js";
-import type {
-  ArchitectureEntry,
-  ArchitectureManifest,
-  ProjectEntry,
-  ProjectManifest,
-} from "../types.js";
+import type { ArchitectureManifest, ProjectManifest } from "../types.js";
 
 export type CreateOptions = {
   name: string;
@@ -30,22 +24,6 @@ export type CreateOptions = {
   /** Extra human notes appended to .agents/POSTINSTALL.md */
   postInstallNotes?: string[];
 };
-
-async function resolvePackRoot(
-  entry: ProjectEntry | ArchitectureEntry,
-  catalogRoot: string,
-): Promise<string> {
-  if (entry.source === "github") {
-    if (!entry.github) {
-      throw new Error(`Entry ${entry.id} is remote but missing github locator`);
-    }
-    return fetchGithubSource(parseGithubSource(entry.github));
-  }
-  if (!entry.path) {
-    throw new Error(`Local entry ${entry.id} missing path`);
-  }
-  return resolveCatalogPath(catalogRoot, entry.path);
-}
 
 export async function createProject(options: CreateOptions): Promise<{
   postInstall: string[];

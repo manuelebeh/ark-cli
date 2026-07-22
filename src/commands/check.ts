@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import * as p from "@clack/prompts";
 import { resolve } from "node:path";
+import { userCatalogRoot } from "../catalog/load.js";
 import { checkProject } from "../check/engine.js";
 
 export const checkCommand = defineCommand({
@@ -15,12 +16,27 @@ export const checkCommand = defineCommand({
       required: false,
       default: ".",
     },
+    catalog: {
+      type: "string",
+      description: "User catalog directory (default: ~/.ark/catalog)",
+    },
   },
-  run({ args }) {
+  async run({ args }) {
     const root = resolve(args.path);
     p.intro(`ark check → ${root}`);
 
-    const result = checkProject(root);
+    const userRoot = args.catalog
+      ? String(args.catalog)
+      : userCatalogRoot();
+
+    let result;
+    try {
+      result = await checkProject(root, { userCatalogRoot: userRoot });
+    } catch (error) {
+      p.cancel(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+
     const errors = result.issues.filter((i) => i.severity === "error");
     const warns = result.issues.filter((i) => i.severity === "warn");
 

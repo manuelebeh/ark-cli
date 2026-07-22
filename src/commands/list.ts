@@ -38,7 +38,13 @@ export const listCommand = defineCommand({
 
     console.log("Architectures");
     for (const arch of registry.architectures) {
-      console.log(`  - ${arch.id}\t${arch.name}\tv${arch.version}`);
+      const origin =
+        arch.source === "github"
+          ? arch.github ?? "github"
+          : arch.path ?? "local";
+      console.log(
+        `  - ${arch.id}\t${arch.name}\t${arch.source}\t${origin}\tv${arch.version}`,
+      );
     }
 
     console.log("\nProjects");

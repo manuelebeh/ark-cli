@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { defaultCatalogRoot, readYamlFile, resolveCatalogPath } from "../catalog/load.js";
+import {
+  loadMergedCatalog,
+  readYamlFile,
+  type LoadedCatalog,
+} from "../catalog/load.js";
+import { resolvePackRoot } from "../catalog/resolve-pack.js";
 import { listFilesRecursive } from "../fs/files.js";
 import type {
   ArchitectureManifest,
@@ -15,10 +20,15 @@ export type CheckResult = {
   issues: CheckIssue[];
 };
 
-export function checkProject(
+export type CheckOptions = {
+  catalog?: LoadedCatalog;
+  userCatalogRoot?: string;
+};
+
+export async function checkProject(
   projectRoot: string,
-  catalogRoot = defaultCatalogRoot(),
-): CheckResult {
+  options: CheckOptions = {},
+): Promise<CheckResult> {
   const projectFile = join(projectRoot, "ark.project.yaml");
   if (!existsSync(projectFile)) {
     return {
@@ -34,12 +44,30 @@ export function checkProject(
     };
   }
 
+  const catalog =
+    options.catalog ??
+    loadMergedCatalog({ userRoot: options.userCatalogRoot });
+  const { registry } = catalog;
+
   const project = readYamlFile<ArkProjectFile>(projectFile);
   const archId = project.implements.architecture;
-  const archDir = resolveCatalogPath(
-    catalogRoot,
-    join("architectures", archId),
-  );
+  const archEntry = registry.architectures.find((a) => a.id === archId);
+  if (!archEntry) {
+    return {
+      architectureId: archId,
+      issues: [
+        {
+          severity: "error",
+          code: "unknown-architecture",
+          message: `Architecture "${archId}" is not in the catalog`,
+          path: "ark.project.yaml",
+        },
+      ],
+    };
+  }
+
+  const archCatalogRoot = catalog.rootFor("architecture", archEntry.id);
+  const archDir = await resolvePackRoot(archEntry, archCatalogRoot);
   const archManifest = readYamlFile<ArchitectureManifest>(
     join(archDir, "manifest.yaml"),
   );

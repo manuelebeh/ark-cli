@@ -7,6 +7,7 @@ ark create my-app
 ark check
 ark list
 ark list --stack react,ui
+ark add architecture ./my-arch
 ark add project ./my-template
 ```
 
@@ -52,32 +53,39 @@ node dist/cli.js create demo --project ts-lib --preset matt-pocock-core
 
 ## User catalog
 
-Custom project types live under `~/.ark/catalog` (override with `ARK_CATALOG_DIR` or `--catalog`). They merge with the built-in catalog; same id → user wins.
+Custom architectures and project types live under `~/.ark/catalog` (override with `ARK_CATALOG_DIR` or `--catalog`). They merge with the built-in catalog; same id → user wins.
 
 ```text
 ~/.ark/catalog/
   registry.yaml
+  architectures/
+    my-arch/
+      manifest.yaml
+      …
   projects/
     mon-stack/
       manifest.yaml
       template/
 ```
 
-Register a pack:
+Register packs:
 
 ```bash
-# Local pack (copied into ~/.ark/catalog/projects/<id>)
-ark add project ./path/to/pack
+# Architecture (local copy or GitHub locator; fetched on create/check)
+ark add architecture ./path/to/arch-pack
+ark add architecture me/ark-packs//architectures/hexagonal@main
 
-# GitHub pack (locator stored; fetched on create)
+# Project template (local copy or GitHub locator; fetched on create)
+ark add project ./path/to/pack
 ark add project me/ark-templates//projects/mon-stack@main
 
 ark add project ./pack --id mon-stack --stacks react,typescript
 ark list
 ark create app --project mon-stack
+ark check ./app
 ```
 
-A pack needs `manifest.yaml` (with `implements.architecture` already in the catalog, e.g. `feature-first`) and a template root (`source.root`, usually `./template`).
+A project pack needs `manifest.yaml` (with `implements.architecture` already in the catalog) and a template root (`source.root`, usually `./template`). An architecture pack needs `manifest.yaml` plus the declared layout/tree/conventions files.
 
 ## Presets
 

@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, rmSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { defineCommand } from "citty";
 import * as p from "@clack/prompts";
 import {
@@ -11,47 +11,15 @@ import {
   userCatalogRoot,
   writeUserRegistry,
 } from "../catalog/load.js";
-import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
+import { resolveSourcePack } from "../catalog/resolve-pack.js";
 import { copyDir } from "../fs/files.js";
-import type { ProjectEntry, ProjectManifest, Registry } from "../types.js";
-
-function looksLikeGithubLocator(input: string): boolean {
-  if (input.startsWith("github:")) return true;
-  const raw = input.trim();
-  if (raw.startsWith(".") || raw.startsWith("/") || /^[A-Za-z]:[\\/]/.test(raw)) {
-    return false;
-  }
-  const withoutAt = raw.split("@")[0] ?? raw;
-  const repoPart = withoutAt.split("//")[0] ?? withoutAt;
-  const parts = repoPart.split("/");
-  return parts.length === 2 && Boolean(parts[0] && parts[1]);
-}
-
-function normalizeGithubLocator(input: string): string {
-  return input.replace(/^github:/, "").trim();
-}
-
-async function resolveSourcePack(source: string): Promise<{
-  kind: "local" | "github";
-  packRoot: string;
-  github?: string;
-}> {
-  const absolute = resolve(source);
-  if (existsSync(absolute)) {
-    return { kind: "local", packRoot: absolute };
-  }
-  if (existsSync(source)) {
-    return { kind: "local", packRoot: resolve(source) };
-  }
-  if (!looksLikeGithubLocator(source)) {
-    throw new Error(
-      `Source not found (local path) and not a GitHub locator: ${source}`,
-    );
-  }
-  const locator = normalizeGithubLocator(source);
-  const packRoot = await fetchGithubSource(parseGithubSource(locator));
-  return { kind: "github", packRoot, github: locator };
-}
+import type {
+  ArchitectureEntry,
+  ArchitectureManifest,
+  ProjectEntry,
+  ProjectManifest,
+  Registry,
+} from "../types.js";
 
 function upsertProjectEntry(registry: Registry, entry: ProjectEntry): Registry {
   const projects = [...(registry.projects ?? [])];
@@ -59,6 +27,17 @@ function upsertProjectEntry(registry: Registry, entry: ProjectEntry): Registry {
   if (idx >= 0) projects[idx] = entry;
   else projects.push(entry);
   return { ...registry, projects };
+}
+
+function upsertArchitectureEntry(
+  registry: Registry,
+  entry: ArchitectureEntry,
+): Registry {
+  const architectures = [...(registry.architectures ?? [])];
+  const idx = architectures.findIndex((a) => a.id === entry.id);
+  if (idx >= 0) architectures[idx] = entry;
+  else architectures.push(entry);
+  return { ...registry, architectures };
 }
 
 export const addProjectCommand = defineCommand({
@@ -199,6 +178,130 @@ export const addProjectCommand = defineCommand({
   },
 });
 
+export const addArchitectureCommand = defineCommand({
+  meta: {
+    name: "architecture",
+    description: "Register an architecture pack in the user catalog",
+  },
+  args: {
+    source: {
+      type: "positional",
+      description: "Local pack path or GitHub locator (owner/repo//path@ref)",
+      required: true,
+    },
+    id: {
+      type: "string",
+      description: "Architecture id (default: from manifest)",
+    },
+    name: {
+      type: "string",
+      description: "Display name (default: from manifest)",
+    },
+    catalog: {
+      type: "string",
+      description: "User catalog directory (default: ~/.ark/catalog)",
+    },
+    force: {
+      type: "boolean",
+      description:
+        "Replace an existing user-catalog architecture with the same id",
+      default: false,
+    },
+  },
+  async run({ args }) {
+    p.intro("ark add architecture");
+
+    const userRoot = ensureUserCatalog(
+      args.catalog ? String(args.catalog) : userCatalogRoot(),
+    );
+
+    let resolved;
+    try {
+      resolved = await resolveSourcePack(String(args.source));
+    } catch (error) {
+      p.cancel(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+
+    const manifestPath = join(resolved.packRoot, "manifest.yaml");
+    if (!existsSync(manifestPath)) {
+      p.cancel(`No manifest.yaml in pack: ${resolved.packRoot}`);
+      process.exit(1);
+    }
+
+    const manifest = readYamlFile<ArchitectureManifest>(manifestPath);
+    const archId = (args.id as string | undefined) ?? manifest.id;
+    const archName = (args.name as string | undefined) ?? manifest.name;
+
+    const requiredFiles = [
+      manifest.files.layout,
+      manifest.files.tree,
+      manifest.files.conventions,
+    ];
+    if (manifest.files.agent_hints) {
+      requiredFiles.push(manifest.files.agent_hints);
+    }
+    for (const rel of requiredFiles) {
+      const abs = join(resolved.packRoot, rel);
+      if (!existsSync(abs)) {
+        p.cancel(`Architecture pack missing declared file: ${rel}`);
+        process.exit(1);
+      }
+    }
+
+    const userRegistry = loadRegistry(userRoot);
+    const existingUser = userRegistry.architectures?.find((a) => a.id === archId);
+    if (existingUser && !args.force) {
+      p.cancel(
+        `Architecture "${archId}" already exists in the user catalog. Use --force to replace.`,
+      );
+      process.exit(1);
+    }
+
+    let entry: ArchitectureEntry;
+
+    if (resolved.kind === "local") {
+      const dest = join(userRoot, "architectures", archId);
+      if (existsSync(dest)) {
+        if (!args.force) {
+          p.cancel(
+            `Pack directory already exists: ${dest}. Use --force to replace.`,
+          );
+          process.exit(1);
+        }
+        rmSync(dest, { recursive: true, force: true });
+      }
+      mkdirSync(dirname(dest), { recursive: true });
+      copyDir(resolved.packRoot, dest);
+
+      entry = {
+        id: archId,
+        name: archName,
+        version: manifest.version,
+        path: `architectures/${archId}`,
+        source: "local",
+      };
+    } else {
+      entry = {
+        id: archId,
+        name: archName,
+        version: manifest.version,
+        source: "github",
+        github: resolved.github,
+      };
+    }
+
+    writeUserRegistry(userRoot, upsertArchitectureEntry(userRegistry, entry));
+
+    p.log.success(
+      resolved.kind === "local"
+        ? `Registered local architecture "${archId}" → ${userRoot}`
+        : `Registered GitHub architecture "${archId}" (${resolved.github})`,
+    );
+    p.outro(`Listed with: ark list`);
+  },
+});
+
 export const addCommand = defineCommand({
   meta: {
     name: "add",
@@ -206,5 +309,6 @@ export const addCommand = defineCommand({
   },
   subCommands: {
     project: addProjectCommand,
+    architecture: addArchitectureCommand,
   },
 });
