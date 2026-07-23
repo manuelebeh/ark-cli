@@ -233,7 +233,7 @@ export const addProjectCommand = defineCommand({
         : `Registered GitHub project "${projectId}" (${resolved.github})`,
     );
     p.outro(
-      `Create with: ark create <name> --architecture ${archId} --project ${projectId}`,
+      `Create with: ark create <name> --stack <tags> --architecture ${archId} --project ${projectId}`,
     );
   },
 });

@@ -20,7 +20,7 @@ ark add agent --agents karpathy
 | Project type | Template that implements an architecture (+ stack tags) |
 | Agent | Portable pack: local manifest, remote guidelines, Agent Skills, or tool-skills |
 
-At `ark create`, you pick an **architecture** first, then a project type that implements it. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
+At `ark create`, you pick a **stack** (project family) first, then an **architecture** available for that stack. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
 
 ## Agent kinds
 
@@ -41,17 +41,17 @@ npm run build
 node dist/cli.js list
 node dist/cli.js list --stack lib
 node dist/cli.js list --stack react,next
-node dist/cli.js create demo --architecture feature-first --project ts-lib --agents karpathy,feature-owner
-node dist/cli.js create hex --architecture hexagonal --project ts-lib-hexagonal
-node dist/cli.js create clean-demo --architecture clean --project ts-lib-clean
+node dist/cli.js create demo --stack lib,typescript --architecture feature-first --agents karpathy,feature-owner
+node dist/cli.js create hex --stack lib,typescript --architecture hexagonal
+node dist/cli.js create clean-demo --stack lib,typescript --architecture clean
 node dist/cli.js create web --project react-next
 node dist/cli.js create api --project laravel-app
 node dist/cli.js check ./demo
 ```
 
-`--project` alone derives the architecture from the project type. `--architecture` / `--arch` filters project types (or must match `--project` when both are set).
+`--project` alone skips stack/architecture prompts (architecture is derived). `--stack` selects the project family; `--architecture` / `--arch` then picks among templates for that family. Both together resolve the project type.
 
-In non-interactive shells (no TTY), pass required flags (`name`, `--project` or `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
+In non-interactive shells (no TTY), pass required flags (`name`, `--project`, or `--stack` + `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
 
 Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 
@@ -106,7 +106,7 @@ ark add project ./pack --id mon-stack --stacks react,typescript
 ark add architecture ./my-arch --id my-arch
 ark add project ./pack --id mon-stack --architecture my-arch
 ark list
-ark create app --architecture my-arch --project mon-stack
+ark create app --stack <tags> --architecture my-arch --project mon-stack
 ark check ./app
 
 # Add agents later (into an existing scaffold)

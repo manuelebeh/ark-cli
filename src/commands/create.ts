@@ -24,6 +24,12 @@ import {
   requireInteractive,
 } from "../cli/prompts.js";
 import { createProject } from "../create/scaffold.js";
+import {
+  findStackGroup,
+  formatStackTags,
+  listStackGroups,
+  resolveProjectInGroup,
+} from "../create/stacks.js";
 import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
 import type { ProjectManifest, Registry } from "../types.js";
 
@@ -60,12 +66,19 @@ export const createCommand = defineCommand({
     },
     project: {
       type: "string",
-      description: "Project type id (skips prompt)",
+      description: "Project type id (skips stack/architecture prompts)",
       alias: "p",
+    },
+    stack: {
+      type: "string",
+      description:
+        "Stack tags for the project family, comma-separated (e.g. lib,typescript)",
+      alias: "s",
     },
     architecture: {
       type: "string",
-      description: "Architecture id (skips prompt; filters project types)",
+      description:
+        "Architecture id (skips prompt; with --stack resolves the project type)",
     },
     arch: {
       type: "string",
@@ -119,8 +132,20 @@ export const createCommand = defineCommand({
     const archFromFlag =
       (args.architecture as string | undefined) ??
       (args.arch as string | undefined);
+    const stackFromFlag = args.stack
+      ? String(args.stack)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
     let projectId = args.project as string | undefined;
     let architectureId = archFromFlag;
+
+    const stackGroups = listStackGroups(registry.projects);
+    if (stackGroups.length === 0) {
+      p.cancel("No project types in catalog. Add one with ark add project.");
+      process.exit(1);
+    }
 
     if (projectId && architectureId) {
       const entry = registry.projects.find((proj) => proj.id === projectId);
@@ -141,18 +166,111 @@ export const createCommand = defineCommand({
       architectureId = entry.implements;
     }
 
-    if (!architectureId) {
-      requireInteractive("--architecture / --arch");
-      const selected = await p.select({
-        message: "Architecture",
-        options: registry.architectures.map((arch) => ({
-          value: arch.id,
-          label: `${arch.name} (${arch.id})`,
-          hint: arch.source === "github" ? "github" : undefined,
-        })),
+    let stackGroup =
+      stackFromFlag && !projectId
+        ? findStackGroup(stackGroups, stackFromFlag)
+        : undefined;
+
+    if (stackFromFlag && !projectId && !stackGroup) {
+      const available = stackGroups
+        .map((g) => formatStackTags(g.stacks))
+        .join(" | ");
+      p.cancel(
+        `No project family matches stacks "${stackFromFlag.join(",")}". Available: ${available}`,
+      );
+      process.exit(1);
+    }
+
+    const selectableGroups =
+      architectureId && !projectId && !stackGroup
+        ? stackGroups.filter((g) =>
+            g.projects.some((pr) => pr.implements === architectureId),
+          )
+        : stackGroups;
+
+    if (
+      architectureId &&
+      !projectId &&
+      !stackGroup &&
+      selectableGroups.length === 0
+    ) {
+      p.cancel(
+        `Architecture "${architectureId}" has no project templates in the catalog`,
+      );
+      process.exit(1);
+    }
+
+    if (!projectId && !stackGroup) {
+      if (selectableGroups.length === 1) {
+        stackGroup = selectableGroups[0];
+      } else {
+        requireInteractive("--stack / -s (or --project / -p)");
+        const selected = await p.select({
+          message: "Stack",
+          options: selectableGroups.map((group) => {
+            const archCount = new Set(
+              group.projects.map((pr) => pr.implements),
+            ).size;
+            return {
+              value: group.key,
+              label: group.label,
+              hint: `${formatStackTags(group.stacks)} · ${archCount} arch`,
+            };
+          }),
+        });
+        exitIfCancelled(selected);
+        stackGroup = selectableGroups.find((g) => g.key === selected);
+      }
+      if (!stackGroup) {
+        p.cancel("Unknown stack");
+        process.exit(1);
+      }
+    }
+
+    if (!projectId && stackGroup) {
+      p.log.info(
+        `Stack: ${stackGroup.label} (${formatStackTags(stackGroup.stacks)})`,
+      );
+
+      const archOptions = stackGroup.projects.map((proj) => {
+        const arch = registry.architectures.find(
+          (a) => a.id === proj.implements,
+        );
+        return {
+          value: proj.implements,
+          label: arch ? `${arch.name} (${arch.id})` : proj.implements,
+          hint: proj.id,
+        };
       });
-      exitIfCancelled(selected);
-      architectureId = selected as string;
+
+      if (architectureId) {
+        const match = resolveProjectInGroup(stackGroup, architectureId);
+        if (!match) {
+          const available = archOptions.map((o) => o.value).join(", ");
+          p.cancel(
+            `Architecture "${architectureId}" has no template for this stack. Available: ${available}`,
+          );
+          process.exit(1);
+        }
+        projectId = match.id;
+      } else if (archOptions.length === 1) {
+        architectureId = archOptions[0]!.value;
+        projectId = resolveProjectInGroup(stackGroup, architectureId)?.id;
+      } else {
+        requireInteractive("--architecture / --arch");
+        const selected = await p.select({
+          message: "Architecture",
+          options: archOptions,
+        });
+        exitIfCancelled(selected);
+        architectureId = selected as string;
+        projectId = resolveProjectInGroup(stackGroup, architectureId)?.id;
+      }
+    }
+
+    if (!architectureId) {
+      p.cancel("Architecture is required");
+      process.exit(1);
     }
 
     const archEntry = registry.architectures.find(
@@ -163,30 +281,11 @@ export const createCommand = defineCommand({
       process.exit(1);
     }
 
-    p.log.info(`Architecture: ${archEntry.name} (${archEntry.id})`);
-
-    const projectsForArch = registry.projects.filter(
-      (proj) => proj.implements === architectureId,
-    );
-    if (projectsForArch.length === 0) {
+    if (!projectId) {
       p.cancel(
-        `No project types implement architecture "${architectureId}". Add one with ark add project.`,
+        `No project type for architecture "${architectureId}" on this stack. Add one with ark add project.`,
       );
       process.exit(1);
-    }
-
-    if (!projectId) {
-      requireInteractive("--project / -p");
-      const selected = await p.select({
-        message: "Project type",
-        options: projectsForArch.map((proj) => ({
-          value: proj.id,
-          label: `${proj.name} (${proj.id})`,
-          hint: proj.source === "github" ? "github" : undefined,
-        })),
-      });
-      exitIfCancelled(selected);
-      projectId = selected as string;
     }
 
     const projectEntry = registry.projects.find((proj) => proj.id === projectId);
@@ -200,6 +299,9 @@ export const createCommand = defineCommand({
       );
       process.exit(1);
     }
+
+    p.log.info(`Architecture: ${archEntry.name} (${archEntry.id})`);
+    p.log.info(`Project type: ${projectEntry.name} (${projectEntry.id})`);
 
     let projectPackRoot: string;
     try {
