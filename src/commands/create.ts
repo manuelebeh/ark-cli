@@ -131,12 +131,12 @@ export const createCommand = defineCommand({
     depth: {
       type: "string",
       description:
-        "Laravel/Django/FastAPI: minimal (Ark skeleton) or full (bootstrap a real app)",
+        "Laravel/Django/FastAPI/PHP/Python: minimal skeleton or full bootstrap",
     },
     bootstrap: {
       type: "string",
       description:
-        "Full depth only: stack-specific method (e.g. ddev, uv, host, poetry)",
+        "Full depth only: stack-specific method (e.g. ddev, uv, composer, host)",
     },
   },
   async run({ args }) {

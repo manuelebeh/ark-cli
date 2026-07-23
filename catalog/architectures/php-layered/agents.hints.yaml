@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews Controller → Service → Repository boundaries
+
+brief: |
+  Follow vanilla PHP layered layout.
+  Controllers call services; services call repositories; models stay free of I/O.

@@ -1,0 +1,6 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: denied-import
+    path: src/Model/Legacy.php
+    reason: "temporary bridge"

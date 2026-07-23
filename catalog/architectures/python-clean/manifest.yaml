@@ -1,0 +1,35 @@
+schema_version: 1
+
+id: python-clean
+name: Python clean architecture
+version: 0.1.0
+description: >
+  Framework-free clean layers: domain/, application/, infrastructure/.
+
+requires:
+  project_manifest: ">=1"
+
+applies_to:
+  stacks: [python]
+  languages: [python]
+
+files:
+  layout: LAYOUT.md
+  tree: tree.schema.yaml
+  conventions: conventions.yaml
+  agent_hints: agents.hints.yaml
+
+checks:
+  - tree
+  - conventions
+  - forbidden_paths
+  - required_files
+
+default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  module-naming: warn
+  missing-module-file: error
+  denied-import: error
+  cross-module-import: error

@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature public API (Action.php)
+
+brief: |
+  Follow vanilla PHP feature folders.
+  New features go in src/Features/{Feature}/ with Action.php as the entrypoint.

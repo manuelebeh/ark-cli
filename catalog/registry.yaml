@@ -100,6 +100,48 @@ architectures:
     path: architectures/fastapi-tiangolo
     source: local
 
+  - id: php-layered
+    name: PHP layered
+    version: 0.1.0
+    path: architectures/php-layered
+    source: local
+
+  - id: php-hexagonal
+    name: PHP hexagonal
+    version: 0.1.0
+    path: architectures/php-hexagonal
+    source: local
+
+  - id: php-feature
+    name: PHP feature folders
+    version: 0.1.0
+    path: architectures/php-feature
+    source: local
+
+  - id: python-src
+    name: Python src package
+    version: 0.1.0
+    path: architectures/python-src
+    source: local
+
+  - id: python-clean
+    name: Python clean architecture
+    version: 0.1.0
+    path: architectures/python-clean
+    source: local
+
+  - id: python-hexagonal
+    name: Python hexagonal
+    version: 0.1.0
+    path: architectures/python-hexagonal
+    source: local
+
+  - id: python-feature
+    name: Python feature packages
+    version: 0.1.0
+    path: architectures/python-feature
+    source: local
+
 projects:
   - id: ts-lib
     name: TypeScript library
@@ -236,6 +278,62 @@ projects:
     path: projects/fastapi-tiangolo
     source: local
     stacks: [fastapi, python]
+
+  - id: php-layered
+    name: PHP app (layered)
+    version: 0.1.0
+    implements: php-layered
+    path: projects/php-layered
+    source: local
+    stacks: [php]
+
+  - id: php-hexagonal
+    name: PHP app (hexagonal)
+    version: 0.1.0
+    implements: php-hexagonal
+    path: projects/php-hexagonal
+    source: local
+    stacks: [php]
+
+  - id: php-feature
+    name: PHP app (feature)
+    version: 0.1.0
+    implements: php-feature
+    path: projects/php-feature
+    source: local
+    stacks: [php]
+
+  - id: python-src
+    name: Python app (src)
+    version: 0.1.0
+    implements: python-src
+    path: projects/python-src
+    source: local
+    stacks: [python]
+
+  - id: python-clean
+    name: Python app (clean)
+    version: 0.1.0
+    implements: python-clean
+    path: projects/python-clean
+    source: local
+    stacks: [python]
+
+  - id: python-hexagonal
+    name: Python app (hexagonal)
+    version: 0.1.0
+    implements: python-hexagonal
+    path: projects/python-hexagonal
+    source: local
+    stacks: [python]
+
+  - id: python-feature
+    name: Python app (feature)
+    version: 0.1.0
+    implements: python-feature
+    path: projects/python-feature
+    source: local
+    stacks: [python]
 
 agents:
   # --- Local personas ---

@@ -1,0 +1,29 @@
+roots:
+  required:
+    - src/
+    - src/Features/
+  optional:
+    - src/Shared/
+    - public/
+    - docs/
+    - tooling/
+    - tests/
+    - config/
+
+modules:
+  path: src/Features/:name
+  required_children:
+    - Action.php
+  optional_children:
+    - Domain/
+    - Application/
+    - Infrastructure/
+    - Tests/
+  forbid:
+    - src/Features/:name/Features/
+
+forbid:
+  - Modules/**
+  - app/Http/**
+
+allow_exceptions_file: architecture.exceptions.yaml

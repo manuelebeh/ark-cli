@@ -1,0 +1,34 @@
+roots:
+  required:
+    - features/
+    - shared/
+  optional:
+    - docs/
+    - tooling/
+    - tests/
+    - src/
+
+modules:
+  path: features/:name
+  required_children:
+    - __init__.py
+  optional_children:
+    - core.py
+    - service.py
+    - tests/
+  forbid:
+    - features/:name/features/
+
+shared:
+  path: shared/
+  allow:
+    - lib/**
+    - config/**
+    - types/**
+
+forbid:
+  - apps/**
+  - domains/**
+  - api/**
+
+allow_exceptions_file: architecture.exceptions.yaml

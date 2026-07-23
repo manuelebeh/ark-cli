@@ -1,0 +1,20 @@
+schema_version: 1
+id: php-layered
+name: PHP app (layered)
+version: 0.1.0
+description: Minimal PHP app (layered) scaffold
+
+implements:
+  architecture: php-layered
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: php
+  runtime: php
+  tags: [php]
+  file_map:
+    index: Service/
+    test_suffix: Test.php
+
+source:
+  root: ./template

@@ -1,0 +1,18 @@
+roots:
+  required:
+    - src/
+  optional:
+    - tests/
+    - docs/
+    - tooling/
+    - scripts/
+    - shared/
+
+forbid:
+  - apps/**
+  - features/**
+  - domains/**
+  - api/**
+  - presentation/**
+
+allow_exceptions_file: architecture.exceptions.yaml

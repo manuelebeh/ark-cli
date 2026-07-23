@@ -1,0 +1,20 @@
+schema_version: 1
+id: php-feature
+name: PHP app (feature)
+version: 0.1.0
+description: Minimal PHP app (feature) scaffold
+
+implements:
+  architecture: php-feature
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: php
+  runtime: php
+  tags: [php]
+  file_map:
+    index: Action.php
+    test_suffix: Test.php
+
+source:
+  root: ./template

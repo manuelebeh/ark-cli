@@ -1,0 +1,6 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: cross-module-import
+    path: src/Features/Greet/Action.php
+    reason: "temporary coupling"

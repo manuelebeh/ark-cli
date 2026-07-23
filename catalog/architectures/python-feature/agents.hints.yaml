@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature public API (__init__.py)
+
+brief: |
+  Follow Python feature packages.
+  New features go in features/{feature}/ with a public __init__.py.

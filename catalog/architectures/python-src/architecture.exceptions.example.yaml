@@ -1,0 +1,6 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: forbidden-path
+    path: mypkg/legacy.py
+    reason: "migrate into src/"

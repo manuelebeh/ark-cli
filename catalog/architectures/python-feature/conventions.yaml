@@ -1,0 +1,22 @@
+naming:
+  modules:
+    pattern: "^[a-z][a-z0-9_]*$"
+  files:
+    tests: "**/test_*.py"
+
+placement:
+  cross_module_imports: false
+  public_api: features/:name/__init__.py
+
+imports:
+  deny: []
+  allow:
+    - from: features/*
+      to: features/*/__init__.py
+    - from: features/*
+      to: shared/**
+    - from: "**"
+      to: shared/**
+
+tests:
+  colocate: true

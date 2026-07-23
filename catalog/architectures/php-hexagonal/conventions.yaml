@@ -1,0 +1,15 @@
+imports:
+  deny:
+    - from: src/Domain/**
+      to: src/Application/**
+    - from: src/Domain/**
+      to: src/Infrastructure/**
+    - from: src/Application/**
+      to: src/Infrastructure/**
+  allow:
+    - from: src/Application/**
+      to: src/Domain/**
+    - from: src/Infrastructure/**
+      to: src/Application/**
+    - from: src/Infrastructure/**
+      to: src/Domain/**

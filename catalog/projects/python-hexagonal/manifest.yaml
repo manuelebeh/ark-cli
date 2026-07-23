@@ -1,0 +1,20 @@
+schema_version: 1
+id: python-hexagonal
+name: Python app (hexagonal)
+version: 0.1.0
+description: Minimal Python app (hexagonal) scaffold
+
+implements:
+  architecture: python-hexagonal
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: python
+  runtime: python
+  tags: [python]
+  file_map:
+    index: application/
+    test_suffix: test_.py
+
+source:
+  root: ./template

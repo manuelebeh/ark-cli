@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Keeps importable code under src/
+
+brief: |
+  Follow the Python src/ package layout.
+  Importable modules live under src/{package}/. Do not dump app modules at the repo root.

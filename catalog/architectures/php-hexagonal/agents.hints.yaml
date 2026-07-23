@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews Domain / Application / Infrastructure import rules
+
+brief: |
+  Follow vanilla PHP hexagonal architecture.
+  Domain must not import Application or Infrastructure.

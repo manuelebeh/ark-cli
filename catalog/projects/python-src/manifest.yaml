@@ -1,0 +1,20 @@
+schema_version: 1
+id: python-src
+name: Python app (src)
+version: 0.1.0
+description: Minimal Python app (src) scaffold
+
+implements:
+  architecture: python-src
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: python
+  runtime: python
+  tags: [python]
+  file_map:
+    index: __init__.py
+    test_suffix: test_.py
+
+source:
+  root: ./template

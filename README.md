@@ -52,16 +52,20 @@ node dist/cli.js create dj --stack django,python --architecture django-services 
 node dist/cli.js create dj-full --stack django,python --architecture django-ddd --depth full --bootstrap uv
 node dist/cli.js create fa --stack fastapi,python --architecture fastapi-modules --depth minimal
 node dist/cli.js create fa-full --stack fastapi,python --architecture fastapi-clean --depth full --bootstrap uv
+node dist/cli.js create php-app --language php --stack php --architecture php-hexagonal --depth minimal
+node dist/cli.js create py-app --language python --stack python --architecture python-src --depth minimal
 node dist/cli.js check ./demo
 ```
 
 `--project` alone skips language/framework/architecture prompts (architecture is derived). `--language` / `-l` picks the language bucket (e.g. `python`). `--stack` accepts a full tag set (`laravel,php`), a language (`python`), or a framework tag (`django`). `--architecture` / `--arch` then picks among templates for that family.
 
-On Laravel, Django, and FastAPI stacks, `--depth minimal|full` chooses an Ark skeleton or a real framework bootstrap. Full mode also needs `--bootstrap`:
+On Laravel, Django, FastAPI, plain PHP, and plain Python stacks, `--depth minimal|full` chooses an Ark skeleton or a real tool bootstrap. Full mode also needs `--bootstrap`:
 
 - Laravel: `laravel-installer` | `composer` | `sail` | `ddev`
 - Django: `uv` | `host` | `poetry` | `cookiecutter-django` | `django-admin`
 - FastAPI: `uv` | `host` | `poetry` | `cookiecutter`
+- PHP (no framework): `composer` | `host`
+- Python (no framework): `uv` | `host` | `poetry`
 
 In non-interactive shells (no TTY), pass required flags (`name`, `--project`, or `--language`/`--stack` + `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
 
@@ -164,6 +168,13 @@ Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans 
 | `fastapi-layered` | `api/`, `services/`, `repositories/`, `models/`, `schemas/` |
 | `fastapi-modules` | `src/{feature}/` with `router.py` + `service.py` |
 | `fastapi-clean` | `domain/`, `application/`, `infrastructure/`, `presentation/` |
+| `php-layered` | Vanilla PHP: `src/{Controller,Service,Repository,Model}/` |
+| `php-hexagonal` | Vanilla PHP: `src/{Domain,Application,Infrastructure}/` |
+| `php-feature` | Vanilla PHP: `src/Features/{Feature}/Action.php` |
+| `python-src` | PyPA `src/{package}/` library/CLI layout |
+| `python-clean` | `domain/`, `application/`, `infrastructure/` |
+| `python-hexagonal` | `domain/`, `application/`, `adapters/` |
+| `python-feature` | `features/{feature}/` public `__init__.py` |
 
 ## Project types
 
@@ -186,6 +197,13 @@ Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans 
 | `fastapi-layered` | fastapi-layered | `fastapi`, `python` | FastAPI pack |
 | `fastapi-modules` | fastapi-modules | `fastapi`, `python` | FastAPI pack |
 | `fastapi-clean` | fastapi-clean | `fastapi`, `python` | FastAPI pack |
+| `php-layered` | php-layered | `php` | Vanilla PHP |
+| `php-hexagonal` | php-hexagonal | `php` | Vanilla PHP |
+| `php-feature` | php-feature | `php` | Vanilla PHP |
+| `python-src` | python-src | `python` | Vanilla Python |
+| `python-clean` | python-clean | `python` | Vanilla Python |
+| `python-hexagonal` | python-hexagonal | `python` | Vanilla Python |
+| `python-feature` | python-feature | `python` | Vanilla Python |
 
 TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet.
 

@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews clean-architecture import rules
+
+brief: |
+  Follow Python clean architecture.
+  domain ← application ← infrastructure. Domain must not import outer layers.

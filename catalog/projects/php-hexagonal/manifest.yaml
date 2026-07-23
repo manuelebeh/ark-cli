@@ -1,0 +1,20 @@
+schema_version: 1
+id: php-hexagonal
+name: PHP app (hexagonal)
+version: 0.1.0
+description: Minimal PHP app (hexagonal) scaffold
+
+implements:
+  architecture: php-hexagonal
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: php
+  runtime: php
+  tags: [php]
+  file_map:
+    index: Application/
+    test_suffix: Test.php
+
+source:
+  root: ./template

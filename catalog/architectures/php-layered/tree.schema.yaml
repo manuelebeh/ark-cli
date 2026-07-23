@@ -1,0 +1,21 @@
+roots:
+  required:
+    - src/
+    - src/Controller/
+    - src/Service/
+    - src/Repository/
+    - src/Model/
+  optional:
+    - public/
+    - shared/
+    - docs/
+    - tooling/
+    - tests/
+    - config/
+
+forbid:
+  - app/Http/**
+  - Modules/**
+  - app-modules/**
+
+allow_exceptions_file: architecture.exceptions.yaml

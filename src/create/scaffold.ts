@@ -19,6 +19,7 @@ import {
   bootstrapFramework,
   frameworkLabel,
   isLaravelStack,
+  isPlainPhpStack,
   type FrameworkBootstrapMethod,
   type ProjectDepth,
 } from "./bootstrap.js";
@@ -108,7 +109,7 @@ export async function createProject(options: CreateOptions): Promise<{
       skipExisting: true,
       templateRoot,
     });
-    if (isLaravelStack(stacks)) {
+    if (isLaravelStack(stacks) || isPlainPhpStack(stacks)) {
       mergeComposerJson(
         join(options.targetDir, "composer.json"),
         join(templateRoot, "composer.json"),

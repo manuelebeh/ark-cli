@@ -1,0 +1,7 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews hexagonal domain/application/adapters boundaries
+
+brief: |
+  Follow Python hexagonal architecture.
+  Domain and application must not import adapters.

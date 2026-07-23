@@ -1,0 +1,25 @@
+imports:
+  deny:
+    - from: src/Model/**
+      to: src/Controller/**
+    - from: src/Model/**
+      to: src/Service/**
+    - from: src/Model/**
+      to: src/Repository/**
+    - from: src/Repository/**
+      to: src/Controller/**
+    - from: src/Repository/**
+      to: src/Service/**
+    - from: src/Service/**
+      to: src/Controller/**
+  allow:
+    - from: src/Controller/**
+      to: src/Service/**
+    - from: src/Controller/**
+      to: src/Model/**
+    - from: src/Service/**
+      to: src/Repository/**
+    - from: src/Service/**
+      to: src/Model/**
+    - from: src/Repository/**
+      to: src/Model/**

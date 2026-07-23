@@ -1,0 +1,25 @@
+roots:
+  required:
+    - domain/
+    - application/
+    - adapters/
+  optional:
+    - shared/
+    - docs/
+    - tooling/
+    - tests/
+
+shared:
+  path: shared/
+  allow:
+    - lib/**
+    - config/**
+    - types/**
+
+forbid:
+  - apps/**
+  - features/**
+  - infrastructure/**
+  - presentation/**
+
+allow_exceptions_file: architecture.exceptions.yaml
