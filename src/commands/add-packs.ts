@@ -10,6 +10,7 @@ import {
   readYamlFile,
   userCatalogRoot,
   writeUserRegistry,
+  writeYamlFile,
 } from "../catalog/load.js";
 import { resolveSourcePack } from "../catalog/resolve-pack.js";
 import { copyDir } from "../fs/files.js";
@@ -40,6 +41,36 @@ function upsertArchitectureEntry(
   return { ...registry, architectures };
 }
 
+function syncLocalProjectManifest(
+  destRoot: string,
+  patch: {
+    id: string;
+    name: string;
+    architecture: string;
+  },
+): void {
+  const manifestPath = join(destRoot, "manifest.yaml");
+  const manifest = readYamlFile<ProjectManifest>(manifestPath);
+  manifest.id = patch.id;
+  manifest.name = patch.name;
+  manifest.implements = {
+    ...manifest.implements,
+    architecture: patch.architecture,
+  };
+  writeYamlFile(manifestPath, manifest);
+}
+
+function syncLocalArchitectureManifest(
+  destRoot: string,
+  patch: { id: string; name: string },
+): void {
+  const manifestPath = join(destRoot, "manifest.yaml");
+  const manifest = readYamlFile<ArchitectureManifest>(manifestPath);
+  manifest.id = patch.id;
+  manifest.name = patch.name;
+  writeYamlFile(manifestPath, manifest);
+}
+
 export const addProjectCommand = defineCommand({
   meta: {
     name: "project",
@@ -58,6 +89,12 @@ export const addProjectCommand = defineCommand({
     name: {
       type: "string",
       description: "Display name (default: from manifest)",
+    },
+    architecture: {
+      type: "string",
+      description:
+        "Architecture id this project implements (default: from manifest; use when the arch was registered under a custom --id)",
+      alias: "arch",
     },
     stacks: {
       type: "string",
@@ -106,12 +143,19 @@ export const addProjectCommand = defineCommand({
           .filter(Boolean)
       : (manifest.stack.tags ?? []);
 
-    const archId = manifest.implements.architecture;
+    const manifestArchId = manifest.implements.architecture;
+    const archId =
+      (args.architecture as string | undefined) ?? manifestArchId;
     if (!findArchitecture(registry, archId)) {
       p.cancel(
         `Architecture "${archId}" is not in the catalog. Add it first or use a known id (e.g. feature-first).`,
       );
       process.exit(1);
+    }
+    if (archId !== manifestArchId) {
+      p.log.info(
+        `implements.architecture: "${archId}" (manifest had "${manifestArchId}")`,
+      );
     }
 
     const templateRel = manifest.source.root;
@@ -145,6 +189,11 @@ export const addProjectCommand = defineCommand({
       }
       mkdirSync(dirname(dest), { recursive: true });
       copyDir(resolved.packRoot, dest);
+      syncLocalProjectManifest(dest, {
+        id: projectId,
+        name: projectName,
+        architecture: archId,
+      });
 
       entry = {
         id: projectId,
@@ -156,6 +205,15 @@ export const addProjectCommand = defineCommand({
         stacks,
       };
     } else {
+      if (
+        archId !== manifestArchId ||
+        projectId !== manifest.id ||
+        projectName !== manifest.name
+      ) {
+        p.log.warn(
+          "GitHub packs keep their remote manifest; registry entry uses your --id / --architecture overrides.",
+        );
+      }
       entry = {
         id: projectId,
         name: projectName,
@@ -174,7 +232,9 @@ export const addProjectCommand = defineCommand({
         ? `Registered local project "${projectId}" → ${userRoot}`
         : `Registered GitHub project "${projectId}" (${resolved.github})`,
     );
-    p.outro(`Create with: ark create <name> --project ${projectId}`);
+    p.outro(
+      `Create with: ark create <name> --architecture ${archId} --project ${projectId}`,
+    );
   },
 });
 
@@ -273,6 +333,7 @@ export const addArchitectureCommand = defineCommand({
       }
       mkdirSync(dirname(dest), { recursive: true });
       copyDir(resolved.packRoot, dest);
+      syncLocalArchitectureManifest(dest, { id: archId, name: archName });
 
       entry = {
         id: archId,
@@ -282,6 +343,11 @@ export const addArchitectureCommand = defineCommand({
         source: "local",
       };
     } else {
+      if (archId !== manifest.id || archName !== manifest.name) {
+        p.log.warn(
+          "GitHub packs keep their remote manifest; registry entry uses your --id / --name overrides.",
+        );
+      }
       entry = {
         id: archId,
         name: archName,
@@ -298,6 +364,11 @@ export const addArchitectureCommand = defineCommand({
         ? `Registered local architecture "${archId}" → ${userRoot}`
         : `Registered GitHub architecture "${archId}" (${resolved.github})`,
     );
+    if (archId !== manifest.id) {
+      p.log.info(
+        `Pair projects with: ark add project <pack> --architecture ${archId}`,
+      );
+    }
     p.outro(`Listed with: ark list`);
   },
 });

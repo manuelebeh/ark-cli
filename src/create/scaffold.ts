@@ -45,7 +45,8 @@ export async function createProject(options: CreateOptions): Promise<{
   );
   const templateRoot = join(projectPackRoot, projectManifest.source.root);
 
-  const archId = projectManifest.implements.architecture;
+  // Registry entry is source of truth (add project --architecture / --id).
+  const archId = projectEntry.implements;
   const archEntry = registry.architectures.find((a) => a.id === archId);
   if (!archEntry) {
     throw new Error(`Architecture not found in registry: ${archId}`);
@@ -72,7 +73,7 @@ export async function createProject(options: CreateOptions): Promise<{
       `  architecture: ${archId}`,
       `  architecture_version: ${archManifest.version}`,
       "project:",
-      `  id: ${projectManifest.id}`,
+      `  id: ${projectEntry.id}`,
       `  name: ${options.name}`,
       "agents: []",
       "",

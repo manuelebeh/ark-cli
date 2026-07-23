@@ -18,6 +18,11 @@ import {
   readYamlFile,
   userCatalogRoot,
 } from "../catalog/load.js";
+import {
+  canPrompt,
+  exitIfCancelled,
+  requireInteractive,
+} from "../cli/prompts.js";
 import { createProject } from "../create/scaffold.js";
 import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
 import type { ProjectManifest, Registry } from "../types.js";
@@ -101,16 +106,14 @@ export const createCommand = defineCommand({
 
     let name = args.name;
     if (!name) {
+      requireInteractive("a project name (positional)");
       const answered = await p.text({
         message: "Project name",
         placeholder: "my-app",
         validate: (v) => (!v ? "Name is required" : undefined),
       });
-      if (p.isCancel(answered)) {
-        p.cancel("Cancelled");
-        process.exit(0);
-      }
-      name = answered;
+      exitIfCancelled(answered);
+      name = answered as string;
     }
 
     const archFromFlag =
@@ -139,6 +142,7 @@ export const createCommand = defineCommand({
     }
 
     if (!architectureId) {
+      requireInteractive("--architecture / --arch");
       const selected = await p.select({
         message: "Architecture",
         options: registry.architectures.map((arch) => ({
@@ -147,10 +151,7 @@ export const createCommand = defineCommand({
           hint: arch.source === "github" ? "github" : undefined,
         })),
       });
-      if (p.isCancel(selected)) {
-        p.cancel("Cancelled");
-        process.exit(0);
-      }
+      exitIfCancelled(selected);
       architectureId = selected as string;
     }
 
@@ -175,6 +176,7 @@ export const createCommand = defineCommand({
     }
 
     if (!projectId) {
+      requireInteractive("--project / -p");
       const selected = await p.select({
         message: "Project type",
         options: projectsForArch.map((proj) => ({
@@ -183,10 +185,7 @@ export const createCommand = defineCommand({
           hint: proj.source === "github" ? "github" : undefined,
         })),
       });
-      if (p.isCancel(selected)) {
-        p.cancel("Cancelled");
-        process.exit(0);
-      }
+      exitIfCancelled(selected);
       projectId = selected as string;
     }
 
@@ -242,7 +241,7 @@ export const createCommand = defineCommand({
       ? String(args.preset).split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    if (!args.preset && !args.agents && presets.length > 0) {
+    if (!args.preset && !args.agents && presets.length > 0 && canPrompt()) {
       const selectedPreset = await p.select({
         message: "Agent preset (optional)",
         options: [
@@ -256,10 +255,7 @@ export const createCommand = defineCommand({
           })),
         ],
       });
-      if (p.isCancel(selectedPreset)) {
-        p.cancel("Cancelled");
-        process.exit(0);
-      }
+      exitIfCancelled(selectedPreset);
       if (selectedPreset) presetIds = [selectedPreset as string];
     }
 
@@ -280,7 +276,7 @@ export const createCommand = defineCommand({
 
     // CLI --preset alone = use that set; only prompt for extras in interactive flows.
     const presetFromCli = Boolean(args.preset);
-    if (!args.agents && !presetFromCli) {
+    if (!args.agents && !presetFromCli && canPrompt()) {
       const remaining = compatible.filter((a) => !presetAgentIds.includes(a.id));
       if (remaining.length === 0) {
         if (!presetAgentIds.length) p.log.warn("No agents match this project stack");
@@ -303,10 +299,7 @@ export const createCommand = defineCommand({
           })),
           required: false,
         });
-        if (p.isCancel(selectedAgents)) {
-          p.cancel("Cancelled");
-          process.exit(0);
-        }
+        exitIfCancelled(selectedAgents);
         extraAgentIds = selectedAgents as string[];
       }
     }

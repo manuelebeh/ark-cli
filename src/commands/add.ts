@@ -21,6 +21,10 @@ import {
   userCatalogRoot,
 } from "../catalog/load.js";
 import { resolvePackRoot } from "../catalog/resolve-pack.js";
+import {
+  canPrompt,
+  exitIfCancelled,
+} from "../cli/prompts.js";
 import type { ProjectManifest, Registry } from "../types.js";
 import {
   addArchitectureCommand,
@@ -147,7 +151,7 @@ export const addAgentCommand = defineCommand({
       ? String(args.preset).split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    if (!args.preset && !args.agents && presets.length > 0) {
+    if (!args.preset && !args.agents && presets.length > 0 && canPrompt()) {
       const selectedPreset = await p.select({
         message: "Agent preset (optional)",
         options: [
@@ -161,10 +165,7 @@ export const addAgentCommand = defineCommand({
           })),
         ],
       });
-      if (p.isCancel(selectedPreset)) {
-        p.cancel("Cancelled");
-        process.exit(0);
-      }
+      exitIfCancelled(selectedPreset);
       if (selectedPreset) presetIds = [selectedPreset as string];
     }
 
@@ -204,7 +205,7 @@ export const addAgentCommand = defineCommand({
       : [];
 
     const presetFromCli = Boolean(args.preset);
-    if (!args.agents && !presetFromCli) {
+    if (!args.agents && !presetFromCli && canPrompt()) {
       const remaining = compatible.filter(
         (a) => !presetAgentIds.includes(a.id),
       );
@@ -235,10 +236,7 @@ export const addAgentCommand = defineCommand({
           })),
           required: false,
         });
-        if (p.isCancel(selectedAgents)) {
-          p.cancel("Cancelled");
-          process.exit(0);
-        }
+        exitIfCancelled(selectedAgents);
         extraAgentIds = selectedAgents as string[];
       }
     }

@@ -65,6 +65,10 @@ export function readYamlFile<T>(path: string): T {
   return parseYaml(readFileSync(path, "utf8")) as T;
 }
 
+export function writeYamlFile(path: string, data: unknown): void {
+  writeFileSync(path, stringifyYaml(data, { lineWidth: 0 }), "utf8");
+}
+
 function emptyUserRegistry(): Registry {
   return {
     schema_version: 1,

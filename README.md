@@ -51,6 +51,8 @@ node dist/cli.js check ./demo
 
 `--project` alone derives the architecture from the project type. `--architecture` / `--arch` filters project types (or must match `--project` when both are set).
 
+In non-interactive shells (no TTY), pass required flags (`name`, `--project` or `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
+
 Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 
 ```bash
@@ -101,6 +103,8 @@ ark add project ./path/to/pack
 ark add project me/ark-templates//projects/mon-stack@main
 
 ark add project ./pack --id mon-stack --stacks react,typescript
+ark add architecture ./my-arch --id my-arch
+ark add project ./pack --id mon-stack --architecture my-arch
 ark list
 ark create app --architecture my-arch --project mon-stack
 ark check ./app
