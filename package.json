@@ -29,6 +29,14 @@
     "agents"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manuelebeh/ark-cli.git"
+  },
+  "homepage": "https://github.com/manuelebeh/ark-cli#readme",
+  "bugs": {
+    "url": "https://github.com/manuelebeh/ark-cli/issues"
+  },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "citty": "^0.2.2",
