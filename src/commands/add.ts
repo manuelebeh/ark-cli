@@ -83,7 +83,7 @@ export const addAgentCommand = defineCommand({
     },
   },
   async run({ args }) {
-    p.intro("ark add agent");
+    p.intro("arkctl add agent");
 
     const projectRoot = resolve(String(args.dir ?? "."));
     if (!existsSync(join(projectRoot, "ark.project.yaml"))) {
@@ -292,7 +292,7 @@ export const addAgentCommand = defineCommand({
         postInstall: result.postInstall,
         notes: presetNotes,
         ran: Boolean(args["run-postinstall"]),
-        flagHint: "ark add agent --run-postinstall",
+        flagHint: "arkctl add agent --run-postinstall",
       })) {
         p.log.info(line);
       }

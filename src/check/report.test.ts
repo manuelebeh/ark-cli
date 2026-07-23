@@ -59,7 +59,7 @@ describe("formatCheckSarif", () => {
       formatCheckSarif(sample, { toolVersion: "0.5.0" }),
     );
     assert.equal(doc.version, "2.1.0");
-    assert.equal(doc.runs[0].tool.driver.name, "ark");
+    assert.equal(doc.runs[0].tool.driver.name, "arkctl");
     assert.equal(doc.runs[0].results[0].ruleId, "denied-import");
     assert.equal(
       doc.runs[0].results[0].locations[0].physicalLocation.artifactLocation

@@ -103,7 +103,7 @@ export function formatCheckSarif(
       {
         tool: {
           driver: {
-            name: "ark",
+            name: "arkctl",
             version: options.toolVersion,
             informationUri: "https://github.com/manuelebeh/ark-cli",
             rules: [...rulesById.values()],

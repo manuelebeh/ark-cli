@@ -111,7 +111,7 @@ export const addProjectCommand = defineCommand({
     },
   },
   async run({ args }) {
-    p.intro("ark add project");
+    p.intro("arkctl add project");
 
     const userRoot = ensureUserCatalog(
       args.catalog ? String(args.catalog) : userCatalogRoot(),
@@ -233,7 +233,7 @@ export const addProjectCommand = defineCommand({
         : `Registered GitHub project "${projectId}" (${resolved.github})`,
     );
     p.outro(
-      `Create with: ark create <name> --stack <tags> --architecture ${archId} --project ${projectId}`,
+      `Create with: arkctl create <name> --stack <tags> --architecture ${archId} --project ${projectId}`,
     );
   },
 });
@@ -269,7 +269,7 @@ export const addArchitectureCommand = defineCommand({
     },
   },
   async run({ args }) {
-    p.intro("ark add architecture");
+    p.intro("arkctl add architecture");
 
     const userRoot = ensureUserCatalog(
       args.catalog ? String(args.catalog) : userCatalogRoot(),
@@ -366,9 +366,9 @@ export const addArchitectureCommand = defineCommand({
     );
     if (archId !== manifest.id) {
       p.log.info(
-        `Pair projects with: ark add project <pack> --architecture ${archId}`,
+        `Pair projects with: arkctl add project <pack> --architecture ${archId}`,
       );
     }
-    p.outro(`Listed with: ark list`);
+    p.outro(`Listed with: arkctl list`);
   },
 });

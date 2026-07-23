@@ -45,7 +45,7 @@ export const updateCommand = defineCommand({
   },
   async run({ args }) {
     const dryRun = Boolean(args["dry-run"]);
-    p.intro(dryRun ? "ark update (dry-run)" : "ark update");
+    p.intro(dryRun ? "arkctl update (dry-run)" : "arkctl update");
 
     if (args.agents) {
       const projectRoot = resolve(String(args.dir));

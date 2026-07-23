@@ -35,7 +35,7 @@ const removeAgentCommand = defineCommand({
   },
   async run({ args }) {
     const projectRoot = resolve(String(args.dir ?? "."));
-    p.intro(`ark remove agent → ${projectRoot}`);
+    p.intro(`arkctl remove agent → ${projectRoot}`);
 
     let projectFile;
     try {

@@ -209,7 +209,7 @@ async function downloadFile(url: string, dest: string): Promise<void> {
   try {
     res = await fetch(url, {
       headers: {
-        "User-Agent": "ark-cli",
+        "User-Agent": "arkctl",
         Accept: "application/octet-stream",
       },
       redirect: "follow",

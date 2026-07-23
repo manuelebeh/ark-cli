@@ -81,7 +81,7 @@ export const adoptCommand = defineCommand({
     const machine = Boolean(args.json);
 
     if (!machine) {
-      p.intro(`ark adopt → ${root}`);
+      p.intro(`arkctl adopt → ${root}`);
     }
 
     if (!existsSync(root)) {

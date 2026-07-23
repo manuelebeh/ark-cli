@@ -1,19 +1,19 @@
-# Ark
+# Ark (arkctl)
 
 CLI to create projects from a catalog (architectures, project types, agents) with structure contracts. Agents can be local or downloaded from GitHub on select.
 
 ```bash
-ark create my-app
-ark adopt
-ark check
-ark list
-ark list --stack react,ui
-ark add architecture ./my-arch
-ark add project ./my-template
-ark add agent --agents karpathy
-ark remove agent --agents karpathy
-ark update
-ark doctor
+arkctl create my-app
+arkctl adopt
+arkctl check
+arkctl list
+arkctl list --stack react,ui
+arkctl add architecture ./my-arch
+arkctl add project ./my-template
+arkctl add agent --agents karpathy
+arkctl remove agent --agents karpathy
+arkctl update
+arkctl doctor
 ```
 
 ## Concepts
@@ -24,7 +24,7 @@ ark doctor
 | Project type | Template that implements an architecture (+ stack tags) |
 | Agent | Portable pack: local manifest, remote guidelines, Agent Skills, or tool-skills |
 
-At `ark create`, you pick a **language** first (PHP, Python, TypeScript, …), then a **framework** family for that language (Laravel, Django, FastAPI, …), then an **architecture**. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
+At `arkctl create`, you pick a **language** first (PHP, Python, TypeScript, …), then a **framework** family for that language (Laravel, Django, FastAPI, …), then an **architecture**. Custom arches go in the user catalog (`arkctl add architecture`); `create` and `check` read them from the registry with no special-case code.
 
 ## Agent kinds
 
@@ -131,25 +131,25 @@ Register packs:
 
 ```bash
 # Architecture (local copy or GitHub locator; fetched on create/check)
-ark add architecture ./path/to/arch-pack
-ark add architecture me/ark-packs//architectures/hexagonal@main
+arkctl add architecture ./path/to/arch-pack
+arkctl add architecture me/ark-packs//architectures/hexagonal@main
 
 # Project template (local copy or GitHub locator; fetched on create)
-ark add project ./path/to/pack
-ark add project me/ark-templates//projects/mon-stack@main
+arkctl add project ./path/to/pack
+arkctl add project me/ark-templates//projects/mon-stack@main
 
-ark add project ./pack --id mon-stack --stacks react,typescript
-ark add architecture ./my-arch --id my-arch
-ark add project ./pack --id mon-stack --architecture my-arch
-ark list
-ark create app --stack <tags> --architecture my-arch --project mon-stack
-ark check ./app
-ark check --json
-ark check --format sarif
+arkctl add project ./pack --id mon-stack --stacks react,typescript
+arkctl add architecture ./my-arch --id my-arch
+arkctl add project ./pack --id mon-stack --architecture my-arch
+arkctl list
+arkctl create app --stack <tags> --architecture my-arch --project mon-stack
+arkctl check ./app
+arkctl check --json
+arkctl check --format sarif
 
 # Add agents later (into an existing scaffold)
-ark add agent --dir ./app --preset matt-pocock-core
-ark add agent --dir ./app --agents karpathy,feature-owner
+arkctl add agent --dir ./app --preset matt-pocock-core
+arkctl add agent --dir ./app --agents karpathy,feature-owner
 ```
 
 A project pack needs `manifest.yaml` (with `implements.architecture` already in the catalog) and a template root (`source.root`, usually `./template`). An architecture pack needs `manifest.yaml` plus the declared layout/tree/conventions files. Layer-only arches use roots + import deny rules; repeating units use optional `modules` in `tree.schema.yaml`.
@@ -286,13 +286,13 @@ TanStack: `tanstack-spa` (guidelines) and `tanstack-intent` (tool-skill, runs `n
 
 `karpathy` and `ponytail` share exclusive group `minimalism` (warning if both selected).
 
-## CI (`ark check`)
+## CI (`arkctl check`)
 
 Machine-readable output for pipelines (no Clack text):
 
 ```bash
-ark check --json
-ark check --format sarif
+arkctl check --json
+arkctl check --format sarif
 ```
 
 Exit `1` when any issue has severity `error`; warnings alone exit `0`.
@@ -306,38 +306,38 @@ Composite GitHub Action:
     format: json
 ```
 
-Inputs: `path` (default `.`), `format` (`json` | `sarif` | `text`), optional `catalog`, `version` (npm `ark` version, default `0.5.0`). Example workflow: [`.github/workflows/ark-check.yml.example`](.github/workflows/ark-check.yml.example).
+Inputs: `path` (default `.`), `format` (`json` | `sarif` | `text`), optional `catalog`, `version` (npm `arkctl` version, default `0.5.0`). Example workflow: [`.github/workflows/ark-check.yml.example`](.github/workflows/ark-check.yml.example).
 
 ## Adopt, update, remove, doctor
 
 Bind an existing repo (detect stacks + score architectures, write `ark.project.yaml`, then `check`):
 
 ```bash
-ark adopt
-ark adopt --architecture feature-first --project ts-lib --yes
-ark adopt --json
+arkctl adopt
+arkctl adopt --architecture feature-first --project ts-lib --yes
+arkctl adopt --json
 ```
 
 Refresh GitHub cache under `~/.ark/cache` (or `ARK_CACHE_DIR`):
 
 ```bash
-ark update
-ark update --dry-run
-ark update --agents --dir ./my-app
+arkctl update
+arkctl update --dry-run
+arkctl update --agents --dir ./my-app
 ```
 
-Remove agents (inverse of `ark add agent`):
+Remove agents (inverse of `arkctl add agent`):
 
 ```bash
-ark remove agent --agents karpathy,feature-owner
+arkctl remove agent --agents karpathy,feature-owner
 ```
 
 Environment diagnostics:
 
 ```bash
-ark doctor
-ark doctor --dir . --strict
-ark doctor --json
+arkctl doctor
+arkctl doctor --dir . --strict
+arkctl doctor --json
 ```
 
 Run unit tests:
@@ -348,4 +348,4 @@ npm test
 
 ## Status
 
-v0.5: Flutter/Dart + Rust packs + import checking, Symfony + Go packs, Nest/Nuxt/Expo packs + CLI bootstrap, Django + FastAPI packs, Python import checking, shared depth/bootstrap, `ark check --json` / `--format sarif`, GitHub Action, `adopt` / `update` / `remove agent` / `doctor`, `npm test`. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.
+v0.5: Flutter/Dart + Rust packs + import checking, Symfony + Go packs, Nest/Nuxt/Expo packs + CLI bootstrap, Django + FastAPI packs, Python import checking, shared depth/bootstrap, `arkctl check --json` / `--format sarif`, GitHub Action, `adopt` / `update` / `remove agent` / `doctor`, `npm test`. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `arkctl add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.

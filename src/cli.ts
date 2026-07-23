@@ -10,7 +10,7 @@ import { updateCommand } from "./commands/update.js";
 
 const main = defineCommand({
   meta: {
-    name: "ark",
+    name: "arkctl",
     version: "0.5.0",
     description:
       "Create projects from catalogs with enforceable architecture contracts",

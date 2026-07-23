@@ -1,5 +1,5 @@
 name: ark-check
-description: Run ark check against a project (JSON or SARIF for CI)
+description: Run arkctl check against a project (JSON or SARIF for CI)
 author: manuelebeh
 
 inputs:
@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ""
   version:
-    description: npm package version of ark to install
+    description: npm package version of arkctl to install
     required: false
     default: "0.5.0"
 
@@ -28,11 +28,11 @@ runs:
       with:
         node-version: "20"
 
-    - name: Install ark
+    - name: Install arkctl
       shell: bash
-      run: npm install -g "ark@${{ inputs.version }}"
+      run: npm install -g "arkctl@${{ inputs.version }}"
 
-    - name: Run ark check
+    - name: Run arkctl check
       shell: bash
       run: |
         set -euo pipefail
@@ -40,4 +40,4 @@ runs:
         if [ -n "${{ inputs.catalog }}" ]; then
           args+=(--catalog "${{ inputs.catalog }}")
         fi
-        ark "${args[@]}"
+        arkctl "${args[@]}"

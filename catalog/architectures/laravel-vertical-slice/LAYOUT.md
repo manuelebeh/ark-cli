@@ -21,4 +21,4 @@ app/
   Models/
 ```
 
-Name the folder after the use case (`RegisterAccount`, `PlaceOrder`). Keep `Action.php` as the required entrypoint so `ark check` can enforce the contract.
+Name the folder after the use case (`RegisterAccount`, `PlaceOrder`). Keep `Action.php` as the required entrypoint so `arkctl check` can enforce the contract.

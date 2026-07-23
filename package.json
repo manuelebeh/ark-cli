@@ -1,10 +1,10 @@
 {
-  "name": "ark",
+  "name": "arkctl",
   "version": "0.5.0",
   "description": "Create projects from remote catalogs with enforceable architecture contracts",
   "type": "module",
   "bin": {
-    "ark": "./bin/ark.js"
+    "arkctl": "./bin/arkctl.js"
   },
   "files": [
     "bin",

@@ -5,7 +5,7 @@ version: 0.1.0
 role: Review structure, naming, and imports against the architecture contract
 constraints:
   - Flag forbidden paths and cross-feature leaks
-  - Prefer ark check / contract rules over personal taste
+  - Prefer arkctl check / contract rules over personal taste
 tools:
   - shell
   - git

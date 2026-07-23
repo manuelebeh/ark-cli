@@ -56,7 +56,7 @@ export const checkCommand = defineCommand({
     const machine = format === "json" || format === "sarif";
 
     if (!machine) {
-      p.intro(`ark check → ${root}`);
+      p.intro(`arkctl check → ${root}`);
     }
 
     const userRoot = args.catalog

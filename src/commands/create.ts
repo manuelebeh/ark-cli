@@ -140,7 +140,7 @@ export const createCommand = defineCommand({
     },
   },
   async run({ args }) {
-    p.intro("ark create");
+    p.intro("arkctl create");
 
     const userRoot = args.catalog
       ? String(args.catalog)
@@ -177,7 +177,7 @@ export const createCommand = defineCommand({
 
     const stackGroups = listStackGroups(registry.projects);
     if (stackGroups.length === 0) {
-      p.cancel("No project types in catalog. Add one with ark add project.");
+      p.cancel("No project types in catalog. Add one with arkctl add project.");
       process.exit(1);
     }
 
@@ -390,7 +390,7 @@ export const createCommand = defineCommand({
 
     if (!projectId) {
       p.cancel(
-        `No project type for architecture "${architectureId}" on this stack. Add one with ark add project.`,
+        `No project type for architecture "${architectureId}" on this stack. Add one with arkctl add project.`,
       );
       process.exit(1);
     }
@@ -610,7 +610,7 @@ export const createCommand = defineCommand({
         postInstall: result.postInstall,
         notes: presetNotes,
         ran: Boolean(args["run-postinstall"]),
-        flagHint: "ark create --run-postinstall",
+        flagHint: "arkctl create --run-postinstall",
       })) {
         p.log.info(line);
       }
@@ -620,6 +620,6 @@ export const createCommand = defineCommand({
       process.exit(1);
     }
 
-    p.outro(`Ready at ${targetDir}\n  Next: cd ${name} && ark check`);
+    p.outro(`Ready at ${targetDir}\n  Next: cd ${name} && arkctl check`);
   },
 });

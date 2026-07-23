@@ -192,7 +192,7 @@ export const doctorCommand = defineCommand({
       return;
     }
 
-    p.intro("ark doctor");
+    p.intro("arkctl doctor");
     p.log.info(
       `Node ${report.node.version} ${report.node.ok ? "(ok)" : "(need >= 20)"}`,
     );
