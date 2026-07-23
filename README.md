@@ -122,7 +122,7 @@ Custom architectures and project types live under `~/.ark/catalog` (override wit
       manifest.yaml
       …
   projects/
-    mon-stack/
+    my-stack/
       manifest.yaml
       template/
 ```
@@ -136,13 +136,13 @@ arkctl add architecture me/ark-packs//architectures/hexagonal@main
 
 # Project template (local copy or GitHub locator; fetched on create)
 arkctl add project ./path/to/pack
-arkctl add project me/ark-templates//projects/mon-stack@main
+arkctl add project me/ark-templates//projects/my-stack@main
 
-arkctl add project ./pack --id mon-stack --stacks react,typescript
+arkctl add project ./pack --id my-stack --stacks react,typescript
 arkctl add architecture ./my-arch --id my-arch
-arkctl add project ./pack --id mon-stack --architecture my-arch
+arkctl add project ./pack --id my-stack --architecture my-arch
 arkctl list
-arkctl create app --stack <tags> --architecture my-arch --project mon-stack
+arkctl create app --stack <tags> --architecture my-arch --project my-stack
 arkctl check ./app
 arkctl check --json
 arkctl check --format sarif
@@ -156,7 +156,7 @@ A project pack needs `manifest.yaml` (with `implements.architecture` already in 
 
 ## Presets
 
-| Preset | Contenu |
+| Preset | Contents |
 |---|---|
 | `matt-pocock-core` | Setup + grill + TDD + review + specs + implement (+ handoff) |
 | `gstack-lite` | Plan/review/investigate/safety/ship Markdown skills (no Bun) |
@@ -168,7 +168,7 @@ node dist/cli.js create app --project ts-lib --preset gstack-full
 node dist/cli.js list --group gstack
 ```
 
-Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans ton agent (voir aussi `.agents/POSTINSTALL.md`).
+After create with this preset: run `/setup-matt-pocock-skills` once in your agent (see also `.agents/POSTINSTALL.md`).
 
 ## Architectures
 
