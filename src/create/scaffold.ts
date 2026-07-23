@@ -7,8 +7,18 @@ import {
   type LoadedCatalog,
 } from "../catalog/load.js";
 import { resolvePackRoot } from "../catalog/resolve-pack.js";
-import { copyTemplateDir } from "../fs/files.js";
+import {
+  copyTemplateDir,
+  copyTemplateDirMerge,
+  mergeComposerJson,
+  writeFolderByFeatureExceptions,
+} from "../fs/files.js";
 import type { ArchitectureManifest, ProjectManifest } from "../types.js";
+import {
+  bootstrapLaravel,
+  type LaravelBootstrapMethod,
+  type LaravelDepth,
+} from "./laravel-bootstrap.js";
 
 export type CreateOptions = {
   name: string;
@@ -23,6 +33,12 @@ export type CreateOptions = {
   runPostInstall?: boolean;
   /** Extra human notes appended to .agents/POSTINSTALL.md */
   postInstallNotes?: string[];
+  /** Laravel stack only: minimal skeleton vs full app bootstrap. */
+  depth?: LaravelDepth;
+  /** Required when depth is full. */
+  bootstrap?: LaravelBootstrapMethod;
+  /** Optional progress hooks for the CLI spinner. */
+  onProgress?: (message: string) => void;
 };
 
 export async function createProject(options: CreateOptions): Promise<{
@@ -62,8 +78,37 @@ export async function createProject(options: CreateOptions): Promise<{
     project_name: options.name,
   };
 
-  mkdirSync(options.targetDir, { recursive: true });
-  copyTemplateDir(templateRoot, options.targetDir, vars);
+  const depth = options.depth ?? "minimal";
+
+  if (depth === "full") {
+    if (!options.bootstrap) {
+      throw new Error("Full Laravel depth requires a bootstrap method");
+    }
+    options.onProgress?.(
+      `Bootstrapping Laravel (${options.bootstrap})…`,
+    );
+    bootstrapLaravel({
+      method: options.bootstrap,
+      targetDir: options.targetDir,
+      name: options.name,
+    });
+
+    options.onProgress?.("Applying architecture…");
+    copyTemplateDirMerge(templateRoot, options.targetDir, vars, {
+      skipExisting: true,
+      templateRoot,
+    });
+    mergeComposerJson(
+      join(options.targetDir, "composer.json"),
+      join(templateRoot, "composer.json"),
+    );
+    if (archId === "laravel-folder-by-feature") {
+      writeFolderByFeatureExceptions(options.targetDir);
+    }
+  } else {
+    mkdirSync(options.targetDir, { recursive: true });
+    copyTemplateDir(templateRoot, options.targetDir, vars);
+  }
 
   writeFileSync(
     join(options.targetDir, "ark.project.yaml"),

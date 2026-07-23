@@ -23,6 +23,14 @@ import {
   exitIfCancelled,
   requireInteractive,
 } from "../cli/prompts.js";
+import {
+  isLaravelStack,
+  LARAVEL_BOOTSTRAP_OPTIONS,
+  parseLaravelBootstrap,
+  parseLaravelDepth,
+  type LaravelBootstrapMethod,
+  type LaravelDepth,
+} from "../create/laravel-bootstrap.js";
 import { createProject } from "../create/scaffold.js";
 import {
   findStackGroup,
@@ -106,6 +114,16 @@ export const createCommand = defineCommand({
       type: "boolean",
       description: "Run tool-skill post-install commands (e.g. react-doctor)",
       default: false,
+    },
+    depth: {
+      type: "string",
+      description:
+        "Laravel only: minimal (Ark skeleton) or full (bootstrap a real Laravel app)",
+    },
+    bootstrap: {
+      type: "string",
+      description:
+        "Laravel full only: laravel-installer | composer | sail | ddev",
     },
   },
   async run({ args }) {
@@ -336,6 +354,61 @@ export const createCommand = defineCommand({
 
     p.log.info(`Stacks: ${stacks.join(", ") || "(none)"}`);
 
+    let depth: LaravelDepth = "minimal";
+    let bootstrap: LaravelBootstrapMethod | undefined;
+
+    if (isLaravelStack(stacks)) {
+      const depthFromFlag = parseLaravelDepth(args.depth);
+      if (depthFromFlag) {
+        depth = depthFromFlag;
+      } else if (args.depth) {
+        p.cancel(`Invalid --depth "${args.depth}" (use minimal or full)`);
+        process.exit(1);
+      } else {
+        requireInteractive("--depth minimal|full");
+        const selected = await p.select({
+          message: "Depth",
+          options: [
+            {
+              value: "minimal",
+              label: "Minimal",
+              hint: "Ark architecture skeleton only",
+            },
+            {
+              value: "full",
+              label: "Full",
+              hint: "Bootstrap a real Laravel app, then apply architecture",
+            },
+          ],
+        });
+        exitIfCancelled(selected);
+        depth = selected as LaravelDepth;
+      }
+
+      if (depth === "full") {
+        const bootFromFlag = parseLaravelBootstrap(args.bootstrap);
+        if (bootFromFlag) {
+          bootstrap = bootFromFlag;
+        } else if (args.bootstrap) {
+          p.cancel(
+            `Invalid --bootstrap "${args.bootstrap}" (use laravel-installer, composer, sail, or ddev)`,
+          );
+          process.exit(1);
+        } else {
+          requireInteractive("--bootstrap laravel-installer|composer|sail|ddev");
+          const selected = await p.select({
+            message: "Laravel bootstrap",
+            options: LARAVEL_BOOTSTRAP_OPTIONS,
+          });
+          exitIfCancelled(selected);
+          bootstrap = selected as LaravelBootstrapMethod;
+        }
+        p.log.info(`Bootstrap: ${bootstrap}`);
+      }
+
+      p.log.info(`Depth: ${depth}`);
+    }
+
     const compatible = filterAgentsForStacks(registry.agents, stacks);
     const presets = listPresets(registry);
 
@@ -416,12 +489,16 @@ export const createCommand = defineCommand({
     }
 
     const spinner = p.spinner();
-    spinner.start(
-      agentIds.some((id) => registry.agents.find((a) => a.id === id)?.source === "github") ||
-        projectEntry.source === "github"
-        ? "Downloading + scaffolding"
-        : "Scaffolding project",
-    );
+    const initialMessage =
+      depth === "full" && bootstrap
+        ? `Bootstrapping Laravel (${bootstrap})…`
+        : agentIds.some(
+              (id) =>
+                registry.agents.find((a) => a.id === id)?.source === "github",
+            ) || projectEntry.source === "github"
+          ? "Downloading + scaffolding"
+          : "Scaffolding project";
+    spinner.start(initialMessage);
     try {
       const result = await createProject({
         name: String(name),
@@ -432,6 +509,11 @@ export const createCommand = defineCommand({
         userCatalogRoot: userRoot,
         runPostInstall: Boolean(args["run-postinstall"]),
         postInstallNotes: presetNotes,
+        depth,
+        bootstrap,
+        onProgress: (message) => {
+          spinner.message(message);
+        },
       });
       spinner.stop("Project created");
       for (const line of postInstallTipLines({

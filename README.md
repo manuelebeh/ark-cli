@@ -45,12 +45,15 @@ node dist/cli.js create demo --stack lib,typescript --architecture feature-first
 node dist/cli.js create hex --stack lib,typescript --architecture hexagonal
 node dist/cli.js create clean-demo --stack lib,typescript --architecture clean
 node dist/cli.js create web --project react-next
-node dist/cli.js create api --stack laravel,php --architecture laravel-ddd
-node dist/cli.js create api-vsa --stack laravel,php --architecture laravel-vertical-slice
+node dist/cli.js create api --stack laravel,php --architecture laravel-ddd --depth minimal
+node dist/cli.js create api-full --stack laravel,php --architecture laravel-ddd --depth full --bootstrap ddev
+node dist/cli.js create api-vsa --stack laravel,php --architecture laravel-vertical-slice --depth minimal
 node dist/cli.js check ./demo
 ```
 
 `--project` alone skips stack/architecture prompts (architecture is derived). `--stack` selects the project family; `--architecture` / `--arch` then picks among templates for that family. Both together resolve the project type.
+
+On Laravel stacks, `--depth minimal|full` chooses an Ark skeleton or a real Laravel bootstrap. Full mode also needs `--bootstrap laravel-installer|composer|sail|ddev`.
 
 In non-interactive shells (no TTY), pass required flags (`name`, `--project`, or `--stack` + `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
 
