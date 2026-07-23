@@ -1,0 +1,24 @@
+roots:
+  required:
+    - src/
+  optional:
+    - shared/
+    - docs/
+    - tooling/
+    - test/
+
+modules:
+  path: src/:name
+  required_children: []
+  optional_children:
+    - dto/
+    - entities/
+  forbid:
+    - src/:name/src/
+
+forbid:
+  - src/controllers/**
+  - src/services/**
+  - src/repositories/**
+
+allow_exceptions_file: architecture.exceptions.yaml

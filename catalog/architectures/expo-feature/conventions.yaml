@@ -1,0 +1,32 @@
+naming:
+  modules:
+    pattern: "^[a-z][a-z0-9_-]*$"
+  files:
+    components: "PascalCase"
+    hooks: "^use[A-Z].*"
+    tests: "**/*.{test,spec}.*"
+
+placement:
+  cross_module_imports: false
+  public_api: src/features/:name/index.ts
+
+imports:
+  deny:
+    - from: src/features/*
+      to: src/features/*/ui/**
+    - from: src/features/*
+      to: src/features/*/data/**
+  allow:
+    - from: src/features/*
+      to: src/features/*/index.ts
+    - from: src/features/*
+      to: src/shared/**
+    - from: src/app/**
+      to: src/features/*/index.ts
+    - from: src/app/**
+      to: src/shared/**
+    - from: "**"
+      to: src/shared/**
+
+tests:
+  colocate: true

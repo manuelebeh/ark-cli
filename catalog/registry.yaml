@@ -142,6 +142,36 @@ architectures:
     path: architectures/python-feature
     source: local
 
+  - id: nest-modules
+    name: NestJS feature modules
+    version: 0.1.0
+    path: architectures/nest-modules
+    source: local
+
+  - id: nest-clean
+    name: NestJS clean architecture
+    version: 0.1.0
+    path: architectures/nest-clean
+    source: local
+
+  - id: nest-hexagonal
+    name: NestJS hexagonal
+    version: 0.1.0
+    path: architectures/nest-hexagonal
+    source: local
+
+  - id: nuxt-feature
+    name: Nuxt feature-first
+    version: 0.1.0
+    path: architectures/nuxt-feature
+    source: local
+
+  - id: expo-feature
+    name: Expo feature-first
+    version: 0.1.0
+    path: architectures/expo-feature
+    source: local
+
 projects:
   - id: ts-lib
     name: TypeScript library
@@ -334,6 +364,46 @@ projects:
     path: projects/python-feature
     source: local
     stacks: [python]
+
+  - id: nest-modules
+    name: NestJS app (modules)
+    version: 0.1.0
+    implements: nest-modules
+    path: projects/nest-modules
+    source: local
+    stacks: [nest, typescript, api]
+
+  - id: nest-clean
+    name: NestJS app (clean)
+    version: 0.1.0
+    implements: nest-clean
+    path: projects/nest-clean
+    source: local
+    stacks: [nest, typescript, api]
+
+  - id: nest-hexagonal
+    name: NestJS app (hexagonal)
+    version: 0.1.0
+    implements: nest-hexagonal
+    path: projects/nest-hexagonal
+    source: local
+    stacks: [nest, typescript, api]
+
+  - id: nuxt-feature
+    name: Nuxt app (feature-first)
+    version: 0.1.0
+    implements: nuxt-feature
+    path: projects/nuxt-feature
+    source: local
+    stacks: [vue, nuxt, web, typescript]
+
+  - id: react-native-expo
+    name: React Native (Expo)
+    version: 0.1.0
+    implements: expo-feature
+    path: projects/react-native-expo
+    source: local
+    stacks: [react-native, expo, mobile, typescript]
 
 agents:
   # --- Local personas ---

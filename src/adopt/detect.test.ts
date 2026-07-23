@@ -39,6 +39,47 @@ describe("detectStacks", () => {
     assert.ok(result.tags.includes("next"));
     assert.ok(result.tags.includes("react"));
   });
+
+  it("detects nest from package.json", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-detect-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ dependencies: { "@nestjs/core": "11.0.0" } }),
+    );
+    const result = detectStacks(dir);
+    assert.ok(result.tags.includes("nest"));
+    assert.ok(result.tags.includes("api"));
+    assert.ok(result.tags.includes("typescript"));
+  });
+
+  it("detects nuxt from package.json", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-detect-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ dependencies: { nuxt: "4.0.0" } }),
+    );
+    const result = detectStacks(dir);
+    assert.ok(result.tags.includes("nuxt"));
+    assert.ok(result.tags.includes("vue"));
+    assert.ok(result.tags.includes("web"));
+  });
+
+  it("detects expo from package.json", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-detect-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({
+        dependencies: { expo: "55.0.0", "react-native": "0.79.0" },
+      }),
+    );
+    const result = detectStacks(dir);
+    assert.ok(result.tags.includes("expo"));
+    assert.ok(result.tags.includes("react-native"));
+    assert.ok(result.tags.includes("mobile"));
+  });
 });
 
 describe("scoreArchitectures", () => {

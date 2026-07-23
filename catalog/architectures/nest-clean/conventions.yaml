@@ -1,0 +1,19 @@
+imports:
+  deny:
+    - from: src/domain/**
+      to: src/application/**
+    - from: src/domain/**
+      to: src/infrastructure/**
+    - from: src/application/**
+      to: src/infrastructure/**
+  allow:
+    - from: src/infrastructure/**
+      to: src/application/**
+    - from: src/infrastructure/**
+      to: src/domain/**
+    - from: src/application/**
+      to: src/domain/**
+    - from: "**"
+      to: shared/**
+    - from: "**"
+      to: src/common/**

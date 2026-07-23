@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews hexagonal import rules under src/
+
+brief: |
+  Follow NestJS hexagonal architecture.
+  src/domain ← src/application ← src/adapters.
+  Domain must not import adapters; application depends on ports only.

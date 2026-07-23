@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature-module boundaries under src/
+
+brief: |
+  Follow NestJS feature modules.
+  New features go in src/{feature}/ with a Nest module file.
+  Prefer importing another feature via its *.module.ts or index.ts.

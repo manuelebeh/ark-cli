@@ -118,7 +118,38 @@ export function detectStacks(projectRoot: string): StackDetection {
     tags.add("typescript");
     signals.push("package.json");
     const deps = jsonDeps(pkg).toLowerCase();
-    if (deps.includes("next")) {
+    const hasNuxtConfig =
+      existsSync(join(projectRoot, "nuxt.config.ts")) ||
+      existsSync(join(projectRoot, "nuxt.config.js")) ||
+      existsSync(join(projectRoot, "nuxt.config.mjs"));
+
+    if (
+      deps.includes("@nestjs/core") ||
+      deps.includes("@nestjs/common") ||
+      existsSync(join(projectRoot, "nest-cli.json"))
+    ) {
+      tags.add("nest");
+      tags.add("api");
+      signals.push(
+        deps.includes("@nestjs/core") || deps.includes("@nestjs/common")
+          ? "@nestjs/core"
+          : "nest-cli.json",
+      );
+    } else if (deps.includes("nuxt") || hasNuxtConfig) {
+      tags.add("vue");
+      tags.add("nuxt");
+      tags.add("web");
+      signals.push(hasNuxtConfig ? "nuxt.config" : "nuxt");
+    } else if (deps.includes("expo") || deps.includes("react-native")) {
+      tags.add("react-native");
+      tags.add("mobile");
+      if (deps.includes("expo")) {
+        tags.add("expo");
+        signals.push("expo");
+      } else {
+        signals.push("react-native");
+      }
+    } else if (deps.includes("next")) {
       tags.add("react");
       tags.add("next");
       signals.push("next");

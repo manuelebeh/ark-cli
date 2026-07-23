@@ -1,0 +1,36 @@
+roots:
+  required:
+    - app/features/
+    - shared/
+  optional:
+    - app/pages/
+    - server/
+    - public/
+    - docs/
+    - tooling/
+
+modules:
+  path: app/features/:name
+  required_children:
+    - index.ts
+  optional_children:
+    - ui/
+    - data/
+    - domain/
+    - composables/
+    - testing/
+  forbid:
+    - app/features/:name/features/
+
+shared:
+  path: shared/
+  allow:
+    - ui/**
+    - lib/**
+    - config/**
+    - types/**
+  forbid_globs:
+    - shared/**/domain/**
+    - shared/**/features/**
+
+allow_exceptions_file: architecture.exceptions.yaml

@@ -1,0 +1,20 @@
+schema_version: 1
+id: react-native-expo
+name: React Native / Expo (feature-first)
+version: 0.1.0
+description: Minimal Expo feature-first scaffold with Expo Router
+
+implements:
+  architecture: expo-feature
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: typescript
+  runtime: node
+  tags: [react-native, expo, mobile, typescript]
+  file_map:
+    index: index.ts
+    test_suffix: .test.ts
+
+source:
+  root: ./template

@@ -1,0 +1,32 @@
+schema_version: 1
+
+id: nest-clean
+name: NestJS clean architecture
+version: 0.1.0
+description: >
+  NestJS clean layers under src/: domain, application, infrastructure.
+
+requires:
+  project_manifest: ">=1"
+
+applies_to:
+  stacks: [nest, typescript, api]
+  languages: [typescript]
+
+files:
+  layout: LAYOUT.md
+  tree: tree.schema.yaml
+  conventions: conventions.yaml
+  agent_hints: agents.hints.yaml
+
+checks:
+  - tree
+  - conventions
+  - forbidden_paths
+  - required_files
+
+default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  denied-import: error

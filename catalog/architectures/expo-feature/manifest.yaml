@@ -1,0 +1,36 @@
+schema_version: 1
+
+id: expo-feature
+name: Expo feature-first
+version: 0.1.0
+description: >
+  Expo / React Native app with features under src/features/, shared under src/shared/,
+  and Expo Router screens under src/app/.
+
+requires:
+  project_manifest: ">=1"
+
+applies_to:
+  stacks: [react-native, expo, mobile, typescript]
+  languages: [typescript]
+
+files:
+  layout: LAYOUT.md
+  tree: tree.schema.yaml
+  conventions: conventions.yaml
+  agent_hints: agents.hints.yaml
+
+checks:
+  - tree
+  - conventions
+  - forbidden_paths
+  - required_files
+
+default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  module-naming: warn
+  missing-module-file: error
+  denied-import: error
+  cross-module-import: error

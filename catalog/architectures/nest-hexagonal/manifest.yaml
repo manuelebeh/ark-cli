@@ -1,0 +1,32 @@
+schema_version: 1
+
+id: nest-hexagonal
+name: NestJS hexagonal
+version: 0.1.0
+description: >
+  NestJS hexagonal layout under src/: domain, application, adapters.
+
+requires:
+  project_manifest: ">=1"
+
+applies_to:
+  stacks: [nest, typescript, api]
+  languages: [typescript]
+
+files:
+  layout: LAYOUT.md
+  tree: tree.schema.yaml
+  conventions: conventions.yaml
+  agent_hints: agents.hints.yaml
+
+checks:
+  - tree
+  - conventions
+  - forbidden_paths
+  - required_files
+
+default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  denied-import: error

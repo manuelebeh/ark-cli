@@ -1,0 +1,28 @@
+naming:
+  modules:
+    pattern: "^[a-z][a-z0-9_-]*$"
+  files:
+    components: "PascalCase"
+    composables: "^use[A-Z].*"
+    tests: "**/*.{test,spec}.*"
+
+placement:
+  cross_module_imports: false
+  public_api: app/features/:name/index.ts
+
+imports:
+  deny:
+    - from: app/features/*
+      to: app/features/*/ui/**
+    - from: app/features/*
+      to: app/features/*/data/**
+  allow:
+    - from: app/features/*
+      to: app/features/*/index.ts
+    - from: app/features/*
+      to: shared/**
+    - from: "**"
+      to: shared/**
+
+tests:
+  colocate: true

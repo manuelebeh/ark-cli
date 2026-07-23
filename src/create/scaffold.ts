@@ -20,6 +20,9 @@ import {
   frameworkLabel,
   isLaravelStack,
   isPlainPhpStack,
+  isDjangoStack,
+  isFastapiStack,
+  isPlainPythonStack,
   type FrameworkBootstrapMethod,
   type ProjectDepth,
 } from "./bootstrap.js";
@@ -117,7 +120,11 @@ export async function createProject(options: CreateOptions): Promise<{
       if (archId === "laravel-folder-by-feature") {
         writeFolderByFeatureExceptions(options.targetDir);
       }
-    } else {
+    } else if (
+      isDjangoStack(stacks) ||
+      isFastapiStack(stacks) ||
+      isPlainPythonStack(stacks)
+    ) {
       mergePyprojectToml(
         join(options.targetDir, "pyproject.toml"),
         join(templateRoot, "pyproject.toml"),

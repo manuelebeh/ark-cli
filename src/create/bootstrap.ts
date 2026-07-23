@@ -30,6 +30,27 @@ import {
   type DjangoBootstrapMethod,
   type FastapiBootstrapMethod,
 } from "./python-bootstrap.js";
+import {
+  bootstrapNest,
+  isNestStack,
+  NEST_BOOTSTRAP_OPTIONS,
+  parseNestBootstrap,
+  type NestBootstrapMethod,
+} from "./nest-bootstrap.js";
+import {
+  bootstrapNuxt,
+  isNuxtStack,
+  NUXT_BOOTSTRAP_OPTIONS,
+  parseNuxtBootstrap,
+  type NuxtBootstrapMethod,
+} from "./nuxt-bootstrap.js";
+import {
+  bootstrapExpo,
+  isExpoStack,
+  EXPO_BOOTSTRAP_OPTIONS,
+  parseExpoBootstrap,
+  type ExpoBootstrapMethod,
+} from "./expo-bootstrap.js";
 
 export type ProjectDepth = "minimal" | "full";
 
@@ -38,7 +59,10 @@ export type FrameworkBootstrapMethod =
   | DjangoBootstrapMethod
   | FastapiBootstrapMethod
   | PlainPhpBootstrapMethod
-  | PlainPythonBootstrapMethod;
+  | PlainPythonBootstrapMethod
+  | NestBootstrapMethod
+  | NuxtBootstrapMethod
+  | ExpoBootstrapMethod;
 
 export type BootstrapOption = {
   value: string;
@@ -53,6 +77,9 @@ export {
   isPythonFrameworkStack,
   isPlainPhpStack,
   isPlainPythonStack,
+  isNestStack,
+  isNuxtStack,
+  isExpoStack,
 };
 
 export function parseProjectDepth(value: unknown): ProjectDepth | undefined {
@@ -65,7 +92,10 @@ export function supportsDepthBootstrap(stacks: string[]): boolean {
     isLaravelStack(stacks) ||
     isPythonFrameworkStack(stacks) ||
     isPlainPhpStack(stacks) ||
-    isPlainPythonStack(stacks)
+    isPlainPythonStack(stacks) ||
+    isNestStack(stacks) ||
+    isNuxtStack(stacks) ||
+    isExpoStack(stacks)
   );
 }
 
@@ -73,6 +103,9 @@ export function frameworkLabel(stacks: string[]): string {
   if (isLaravelStack(stacks)) return "Laravel";
   if (isDjangoStack(stacks)) return "Django";
   if (isFastapiStack(stacks)) return "FastAPI";
+  if (isNestStack(stacks)) return "NestJS";
+  if (isNuxtStack(stacks)) return "Nuxt";
+  if (isExpoStack(stacks)) return "Expo";
   if (isPlainPhpStack(stacks)) return "PHP";
   if (isPlainPythonStack(stacks)) return "Python";
   return "framework";
@@ -82,6 +115,9 @@ export function bootstrapOptionsForStacks(stacks: string[]): BootstrapOption[] {
   if (isLaravelStack(stacks)) return LARAVEL_BOOTSTRAP_OPTIONS;
   if (isDjangoStack(stacks)) return DJANGO_BOOTSTRAP_OPTIONS;
   if (isFastapiStack(stacks)) return FASTAPI_BOOTSTRAP_OPTIONS;
+  if (isNestStack(stacks)) return NEST_BOOTSTRAP_OPTIONS;
+  if (isNuxtStack(stacks)) return NUXT_BOOTSTRAP_OPTIONS;
+  if (isExpoStack(stacks)) return EXPO_BOOTSTRAP_OPTIONS;
   if (isPlainPhpStack(stacks)) return PLAIN_PHP_BOOTSTRAP_OPTIONS;
   if (isPlainPythonStack(stacks)) return PLAIN_PYTHON_BOOTSTRAP_OPTIONS;
   return [];
@@ -94,6 +130,9 @@ export function parseBootstrapForStacks(
   if (isLaravelStack(stacks)) return parseLaravelBootstrap(value);
   if (isDjangoStack(stacks)) return parseDjangoBootstrap(value);
   if (isFastapiStack(stacks)) return parseFastapiBootstrap(value);
+  if (isNestStack(stacks)) return parseNestBootstrap(value);
+  if (isNuxtStack(stacks)) return parseNuxtBootstrap(value);
+  if (isExpoStack(stacks)) return parseExpoBootstrap(value);
   if (isPlainPhpStack(stacks)) return parsePlainPhpBootstrap(value);
   if (isPlainPythonStack(stacks)) return parsePlainPythonBootstrap(value);
   return undefined;
@@ -130,6 +169,30 @@ export function bootstrapFramework(opts: {
   if (isFastapiStack(opts.stacks)) {
     bootstrapFastapi({
       method: opts.method as FastapiBootstrapMethod,
+      targetDir: opts.targetDir,
+      name: opts.name,
+    });
+    return;
+  }
+  if (isNestStack(opts.stacks)) {
+    bootstrapNest({
+      method: opts.method as NestBootstrapMethod,
+      targetDir: opts.targetDir,
+      name: opts.name,
+    });
+    return;
+  }
+  if (isNuxtStack(opts.stacks)) {
+    bootstrapNuxt({
+      method: opts.method as NuxtBootstrapMethod,
+      targetDir: opts.targetDir,
+      name: opts.name,
+    });
+    return;
+  }
+  if (isExpoStack(opts.stacks)) {
+    bootstrapExpo({
+      method: opts.method as ExpoBootstrapMethod,
       targetDir: opts.targetDir,
       name: opts.name,
     });

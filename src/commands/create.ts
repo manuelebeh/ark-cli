@@ -131,7 +131,7 @@ export const createCommand = defineCommand({
     depth: {
       type: "string",
       description:
-        "Laravel/Django/FastAPI/PHP/Python: minimal skeleton or full bootstrap",
+        "minimal skeleton or full CLI bootstrap (Laravel/Django/FastAPI/Nest/Nuxt/Expo/PHP/Python)",
     },
     bootstrap: {
       type: "string",

@@ -1,0 +1,10 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature boundaries under src/features/
+  - id: vercel-react-native
+    reason: React Native / Expo performance and composition guidelines
+
+brief: |
+  Follow Expo feature-first.
+  New domain behavior goes in src/features/<name>, not src/shared/.
+  Screens in src/app/ import features via index.ts only.

@@ -1,0 +1,23 @@
+roots:
+  required:
+    - src/domain/
+    - src/application/
+    - src/infrastructure/
+  optional:
+    - src/common/
+    - shared/
+    - docs/
+    - tooling/
+
+shared:
+  path: shared/
+  allow:
+    - lib/**
+    - config/**
+    - types/**
+
+forbid:
+  - src/controllers/**
+  - src/modules/**
+
+allow_exceptions_file: architecture.exceptions.yaml

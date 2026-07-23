@@ -1,0 +1,20 @@
+schema_version: 1
+id: nest-modules
+name: NestJS app (modules)
+version: 0.1.0
+description: Minimal NestJS feature-modules scaffold (src/{feature})
+
+implements:
+  architecture: nest-modules
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: typescript
+  runtime: node
+  tags: [nest, typescript, api]
+  file_map:
+    index: "*.module.ts"
+    test_suffix: .spec.ts
+
+source:
+  root: ./template

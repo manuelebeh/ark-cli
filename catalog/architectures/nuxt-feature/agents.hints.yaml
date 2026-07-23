@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature boundaries under app/features/
+
+brief: |
+  Follow Nuxt feature-first.
+  New domain behavior goes in app/features/<name>, not shared/.
+  Cross-feature access only via app/features/<name>/index.ts.

@@ -1,0 +1,24 @@
+naming:
+  modules:
+    pattern: "^[a-z][a-z0-9-]*$"
+  files:
+    tests: "**/*.{spec,test}.ts"
+
+placement:
+  cross_module_imports: false
+  public_api: src/:name/*.module.ts
+
+imports:
+  deny: []
+  allow:
+    - from: src/*
+      to: src/*/*.module.ts
+    - from: src/*
+      to: src/*/index.ts
+    - from: src/*
+      to: shared/**
+    - from: "**"
+      to: shared/**
+
+tests:
+  colocate: true

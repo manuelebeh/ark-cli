@@ -1,0 +1,8 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews clean architecture import rules under src/
+
+brief: |
+  Follow NestJS clean architecture.
+  src/domain ← src/application ← src/infrastructure.
+  Domain must not import outer layers.
