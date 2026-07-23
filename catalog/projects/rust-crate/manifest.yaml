@@ -1,0 +1,20 @@
+schema_version: 1
+id: rust-crate
+name: Rust app (crate)
+version: 0.1.0
+description: Minimal Rust binary crate scaffold
+
+implements:
+  architecture: rust-crate
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: rust
+  runtime: rust
+  tags: [rust]
+  file_map:
+    index: src/
+    test_suffix: _test.rs
+
+source:
+  root: ./template

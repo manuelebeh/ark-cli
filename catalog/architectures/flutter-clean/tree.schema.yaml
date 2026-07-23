@@ -1,0 +1,24 @@
+roots:
+  required:
+    - lib/domain/
+    - lib/data/
+    - lib/presentation/
+  optional:
+    - lib/core/
+    - lib/shared/
+    - test/
+    - docs/
+
+forbid:
+  - lib/features/**
+  - lib/widgets/**
+
+shared:
+  path: lib/shared/
+  allow:
+    - lib/**
+    - widgets/**
+    - config/**
+    - types/**
+
+allow_exceptions_file: architecture.exceptions.yaml

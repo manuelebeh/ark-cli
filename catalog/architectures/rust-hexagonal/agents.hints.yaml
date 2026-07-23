@@ -1,0 +1,9 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews domain / application / adapters import rules
+  - id: rust-best-practices
+    reason: Modules, Result/Option, clippy, rustfmt, ownership
+
+brief: |
+  Follow Rust hexagonal architecture under src/.
+  domain ← application ← adapters. Domain must not import Application or Adapters.

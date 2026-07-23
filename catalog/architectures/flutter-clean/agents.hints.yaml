@@ -1,0 +1,10 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews domain / data / presentation import rules
+  - id: flutter-best-practices
+    reason: Dart style, package imports, widget tests, layer hygiene
+
+brief: |
+  Follow Flutter clean architecture.
+  Domain must not import data or presentation.
+  Presentation must not import data; depend on domain ports instead.

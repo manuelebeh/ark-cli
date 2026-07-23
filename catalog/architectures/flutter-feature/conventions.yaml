@@ -1,0 +1,35 @@
+naming:
+  modules:
+    pattern: "^[a-z][a-z0-9_]*$"
+  files:
+    widgets: "snake_case.dart"
+    tests: "**/*_test.dart"
+
+placement:
+  cross_module_imports: false
+  public_api: lib/features/:name/index.dart
+
+imports:
+  deny:
+    - from: lib/features/*
+      to: lib/features/*/domain/**
+    - from: lib/features/*
+      to: lib/features/*/data/**
+    - from: lib/features/*
+      to: lib/features/*/presentation/**
+  allow:
+    - from: lib/features/*
+      to: lib/features/*/index.dart
+    - from: lib/features/*
+      to: lib/shared/**
+    - from: lib/main.dart
+      to: lib/features/**
+    - from: lib/core/**
+      to: lib/features/**
+    - from: lib/core/**
+      to: lib/shared/**
+    - from: "**"
+      to: lib/shared/**
+
+tests:
+  colocate: true

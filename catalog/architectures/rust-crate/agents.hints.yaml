@@ -1,0 +1,9 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Keeps src/ layout and module boundaries coherent
+  - id: rust-best-practices
+    reason: Modules, Result/Option, clippy, rustfmt, ownership
+
+brief: |
+  Follow the standard Rust crate layout.
+  Source lives under src/; keep main thin and delegate to modules.

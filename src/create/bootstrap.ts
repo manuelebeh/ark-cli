@@ -65,6 +65,20 @@ import {
   parseGoBootstrap,
   type GoBootstrapMethod,
 } from "./go-bootstrap.js";
+import {
+  bootstrapFlutter,
+  isFlutterStack,
+  FLUTTER_BOOTSTRAP_OPTIONS,
+  parseFlutterBootstrap,
+  type FlutterBootstrapMethod,
+} from "./flutter-bootstrap.js";
+import {
+  bootstrapRust,
+  isRustStack,
+  RUST_BOOTSTRAP_OPTIONS,
+  parseRustBootstrap,
+  type RustBootstrapMethod,
+} from "./rust-bootstrap.js";
 
 export type ProjectDepth = "minimal" | "full";
 
@@ -78,7 +92,9 @@ export type FrameworkBootstrapMethod =
   | NuxtBootstrapMethod
   | ExpoBootstrapMethod
   | SymfonyBootstrapMethod
-  | GoBootstrapMethod;
+  | GoBootstrapMethod
+  | FlutterBootstrapMethod
+  | RustBootstrapMethod;
 
 export type BootstrapOption = {
   value: string;
@@ -98,6 +114,8 @@ export {
   isExpoStack,
   isSymfonyStack,
   isGoStack,
+  isFlutterStack,
+  isRustStack,
 };
 
 export function parseProjectDepth(value: unknown): ProjectDepth | undefined {
@@ -115,7 +133,9 @@ export function supportsDepthBootstrap(stacks: string[]): boolean {
     isNuxtStack(stacks) ||
     isExpoStack(stacks) ||
     isSymfonyStack(stacks) ||
-    isGoStack(stacks)
+    isGoStack(stacks) ||
+    isFlutterStack(stacks) ||
+    isRustStack(stacks)
   );
 }
 
@@ -127,7 +147,9 @@ export function frameworkLabel(stacks: string[]): string {
   if (isNestStack(stacks)) return "NestJS";
   if (isNuxtStack(stacks)) return "Nuxt";
   if (isExpoStack(stacks)) return "Expo";
+  if (isFlutterStack(stacks)) return "Flutter";
   if (isGoStack(stacks)) return "Go";
+  if (isRustStack(stacks)) return "Rust";
   if (isPlainPhpStack(stacks)) return "PHP";
   if (isPlainPythonStack(stacks)) return "Python";
   return "framework";
@@ -141,7 +163,9 @@ export function bootstrapOptionsForStacks(stacks: string[]): BootstrapOption[] {
   if (isNestStack(stacks)) return NEST_BOOTSTRAP_OPTIONS;
   if (isNuxtStack(stacks)) return NUXT_BOOTSTRAP_OPTIONS;
   if (isExpoStack(stacks)) return EXPO_BOOTSTRAP_OPTIONS;
+  if (isFlutterStack(stacks)) return FLUTTER_BOOTSTRAP_OPTIONS;
   if (isGoStack(stacks)) return GO_BOOTSTRAP_OPTIONS;
+  if (isRustStack(stacks)) return RUST_BOOTSTRAP_OPTIONS;
   if (isPlainPhpStack(stacks)) return PLAIN_PHP_BOOTSTRAP_OPTIONS;
   if (isPlainPythonStack(stacks)) return PLAIN_PYTHON_BOOTSTRAP_OPTIONS;
   return [];
@@ -158,7 +182,9 @@ export function parseBootstrapForStacks(
   if (isNestStack(stacks)) return parseNestBootstrap(value);
   if (isNuxtStack(stacks)) return parseNuxtBootstrap(value);
   if (isExpoStack(stacks)) return parseExpoBootstrap(value);
+  if (isFlutterStack(stacks)) return parseFlutterBootstrap(value);
   if (isGoStack(stacks)) return parseGoBootstrap(value);
+  if (isRustStack(stacks)) return parseRustBootstrap(value);
   if (isPlainPhpStack(stacks)) return parsePlainPhpBootstrap(value);
   if (isPlainPythonStack(stacks)) return parsePlainPythonBootstrap(value);
   return undefined;
@@ -232,9 +258,25 @@ export function bootstrapFramework(opts: {
     });
     return;
   }
+  if (isFlutterStack(opts.stacks)) {
+    bootstrapFlutter({
+      method: opts.method as FlutterBootstrapMethod,
+      targetDir: opts.targetDir,
+      name: opts.name,
+    });
+    return;
+  }
   if (isGoStack(opts.stacks)) {
     bootstrapGo({
       method: opts.method as GoBootstrapMethod,
+      targetDir: opts.targetDir,
+      name: opts.name,
+    });
+    return;
+  }
+  if (isRustStack(opts.stacks)) {
+    bootstrapRust({
+      method: opts.method as RustBootstrapMethod,
       targetDir: opts.targetDir,
       name: opts.name,
     });

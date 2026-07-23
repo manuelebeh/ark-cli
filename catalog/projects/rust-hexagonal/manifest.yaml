@@ -1,0 +1,20 @@
+schema_version: 1
+id: rust-hexagonal
+name: Rust app (hexagonal)
+version: 0.1.0
+description: Minimal Rust hexagonal scaffold
+
+implements:
+  architecture: rust-hexagonal
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: rust
+  runtime: rust
+  tags: [rust]
+  file_map:
+    index: src/application/
+    test_suffix: _test.rs
+
+source:
+  root: ./template

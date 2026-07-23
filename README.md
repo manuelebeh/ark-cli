@@ -63,6 +63,8 @@ node dist/cli.js create web-nuxt --stack vue,nuxt,web,typescript --architecture 
 node dist/cli.js create app-rn --stack react-native,expo,mobile,typescript --architecture expo-feature --depth minimal
 node dist/cli.js create sf --stack symfony,php --architecture symfony-clean --depth minimal
 node dist/cli.js create svc --stack go --architecture go-internal --depth minimal
+node dist/cli.js create mobile --stack flutter,dart --architecture flutter-feature --depth minimal
+node dist/cli.js create rs --stack rust --architecture rust-crate --depth minimal
 node dist/cli.js check ./demo
 node dist/cli.js check --json
 node dist/cli.js check --format sarif
@@ -70,7 +72,7 @@ node dist/cli.js check --format sarif
 
 `--project` alone skips language/framework/architecture prompts (architecture is derived). `--language` / `-l` picks the language bucket (e.g. `python`). `--stack` accepts a full tag set (`laravel,php`), a language (`python`), or a framework tag (`django`). `--architecture` / `--arch` then picks among templates for that family.
 
-On Laravel, Symfony, Django, FastAPI, NestJS, Nuxt, Expo, Go, plain PHP, and plain Python stacks, `--depth minimal|full` chooses an Ark skeleton or a real tool bootstrap. Full mode also needs `--bootstrap`:
+On Laravel, Symfony, Django, FastAPI, NestJS, Nuxt, Expo, Flutter, Go, Rust, plain PHP, and plain Python stacks, `--depth minimal|full` chooses an Ark skeleton or a real tool bootstrap. Full mode also needs `--bootstrap`:
 
 - Laravel: `laravel-installer` | `composer` | `sail` | `ddev`
 - Symfony: `symfony-cli` | `composer` | `host`
@@ -79,7 +81,9 @@ On Laravel, Symfony, Django, FastAPI, NestJS, Nuxt, Expo, Go, plain PHP, and pla
 - NestJS: `nest-cli` | `host`
 - Nuxt: `nuxi` | `host`
 - Expo: `create-expo-app` | `host`
+- Flutter: `flutter-create` | `host`
 - Go: `go-mod` | `host`
+- Rust: `cargo-init` | `host`
 - PHP (no framework): `composer` | `host`
 - Python (no framework): `uv` | `host` | `poetry`
 
@@ -204,6 +208,11 @@ Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans 
 | `go-internal` | Go `cmd/` + `internal/` |
 | `go-clean` | Go `internal/{domain,application,infrastructure}/` |
 | `go-hexagonal` | Go `internal/{domain,application,adapters}/` |
+| `flutter-feature` | Flutter `lib/features/` + `lib/shared/` |
+| `flutter-clean` | Flutter `lib/{domain,data,presentation}/` |
+| `rust-crate` | Rust idiomatic `src/` crate |
+| `rust-clean` | Rust `src/{domain,application,infrastructure}/` |
+| `rust-hexagonal` | Rust `src/{domain,application,adapters}/` |
 
 ## Project types
 
@@ -244,6 +253,11 @@ Après create avec ce preset : lancer `/setup-matt-pocock-skills` une fois dans 
 | `go-internal` | go-internal | `go` | Go pack |
 | `go-clean` | go-clean | `go` | Go pack |
 | `go-hexagonal` | go-hexagonal | `go` | Go pack |
+| `flutter-feature` | flutter-feature | `flutter`, `dart` | Flutter pack |
+| `flutter-clean` | flutter-clean | `flutter`, `dart` | Flutter pack |
+| `rust-crate` | rust-crate | `rust` | Rust pack |
+| `rust-clean` | rust-clean | `rust` | Rust pack |
+| `rust-hexagonal` | rust-hexagonal | `rust` | Rust pack |
 
 TanStack: `tanstack-spa` (guidelines) and `tanstack-intent` (tool-skill, runs `npx @tanstack/intent install`).
 
@@ -257,6 +271,8 @@ TanStack: `tanstack-spa` (guidelines) and `tanstack-intent` (tool-skill, runs `n
 - Vanilla PHP: `php-best-practices` (stacks: `php`)
 - Symfony: `symfony-best-practices` (stacks: `symfony`, `php`)
 - Go: `go-best-practices` (stacks: `go`)
+- Flutter: `flutter-best-practices` (stacks: `flutter`, `dart`)
+- Rust: `rust-best-practices` (stacks: `rust`)
 - TanStack: `tanstack-spa` (stacks: `react`, `web`, `typescript`); `tanstack-intent` tool-skill (stacks: `react`, `next`, `web`, `typescript`)
 
 ## Built-in remote agents
@@ -332,4 +348,4 @@ npm test
 
 ## Status
 
-v0.5: Symfony + Go catalog packs + Go import checking, Nest/Nuxt/Expo packs + CLI bootstrap, Django + FastAPI packs, Python import checking, shared depth/bootstrap, `ark check --json` / `--format sarif`, GitHub Action, `adopt` / `update` / `remove agent` / `doctor`, `npm test`. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.
+v0.5: Flutter/Dart + Rust packs + import checking, Symfony + Go packs, Nest/Nuxt/Expo packs + CLI bootstrap, Django + FastAPI packs, Python import checking, shared depth/bootstrap, `ark check --json` / `--format sarif`, GitHub Action, `adopt` / `update` / `remove agent` / `doctor`, `npm test`. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.

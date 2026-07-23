@@ -95,6 +95,27 @@ export function detectStacks(projectRoot: string): StackDetection {
     signals.push("go.mod");
   }
 
+  const cargo = join(projectRoot, "Cargo.toml");
+  if (existsSync(cargo)) {
+    tags.add("rust");
+    signals.push("Cargo.toml");
+  }
+
+  const pubspec = join(projectRoot, "pubspec.yaml");
+  if (existsSync(pubspec)) {
+    tags.add("dart");
+    signals.push("pubspec.yaml");
+    const pubText = (readTextIfExists(pubspec) ?? "").toLowerCase();
+    if (
+      pubText.includes("flutter:") ||
+      /\bflutter\s*:/.test(pubText) ||
+      pubText.includes("sdk: flutter")
+    ) {
+      tags.add("flutter");
+      signals.push("flutter");
+    }
+  }
+
   const pyproject = join(projectRoot, "pyproject.toml");
   const requirements = join(projectRoot, "requirements.txt");
   const managePy = join(projectRoot, "manage.py");

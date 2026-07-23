@@ -13,8 +13,10 @@ const JS_SOURCE_EXT = /\.(tsx?|jsx?|mts|cts)$/;
 const PHP_SOURCE_EXT = /\.php$/;
 const PY_SOURCE_EXT = /\.py$/;
 const GO_SOURCE_EXT = /\.go$/;
+const DART_SOURCE_EXT = /\.dart$/;
+const RUST_SOURCE_EXT = /\.rs$/;
 const SKIP_DIR =
-  /^(node_modules|dist|vendor|\.git|\.venv|venv|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|\.tox)(\/|$)/;
+  /^(node_modules|dist|vendor|target|\.git|\.venv|venv|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|\.tox|\.dart_tool|\.pub-cache)(\/|$)/;
 
 const IMPORT_RE =
   /(?:import\s+(?:type\s+)?(?:[^"'`]+?\s+from\s+)?|export\s+(?:type\s+)?(?:[^"'`]+?\s+from\s+)|(?:import|require)\s*\(\s*)['"]([^'"]+)['"]/g;
@@ -67,11 +69,14 @@ export function checkImports(
       (JS_SOURCE_EXT.test(f) ||
         PHP_SOURCE_EXT.test(f) ||
         PY_SOURCE_EXT.test(f) ||
-        GO_SOURCE_EXT.test(f)) &&
+        GO_SOURCE_EXT.test(f) ||
+        DART_SOURCE_EXT.test(f) ||
+        RUST_SOURCE_EXT.test(f)) &&
       !SKIP_DIR.test(f),
   );
 
   const goModulePath = readGoModulePath(projectRoot);
+  const dartPackageName = readPubspecPackageName(projectRoot);
 
   for (const file of sourceFiles) {
     const abs = join(projectRoot, file);
@@ -82,13 +87,17 @@ export function checkImports(
       continue;
     }
 
-    const targets = GO_SOURCE_EXT.test(file)
-      ? extractGoImportTargets(content, files, goModulePath)
-      : PY_SOURCE_EXT.test(file)
-        ? extractPyImportTargets(file, content, files)
-        : PHP_SOURCE_EXT.test(file)
-          ? extractPhpImportTargets(content, files)
-          : extractJsImportTargets(file, content, files);
+    const targets = DART_SOURCE_EXT.test(file)
+      ? extractDartImportTargets(file, content, files, dartPackageName)
+      : RUST_SOURCE_EXT.test(file)
+        ? extractRustImportTargets(file, content, files)
+        : GO_SOURCE_EXT.test(file)
+          ? extractGoImportTargets(content, files, goModulePath)
+          : PY_SOURCE_EXT.test(file)
+            ? extractPyImportTargets(file, content, files)
+            : PHP_SOURCE_EXT.test(file)
+              ? extractPhpImportTargets(content, files)
+              : extractJsImportTargets(file, content, files);
 
     for (const target of targets) {
       const fromModule = modulesPath
@@ -391,6 +400,197 @@ function extractGoImportTargets(
   return out;
 }
 
+/** Read package `name:` from pubspec.yaml, or null. */
+export function readPubspecPackageName(projectRoot: string): string | null {
+  const path = join(projectRoot, "pubspec.yaml");
+  try {
+    const content = readFileSync(path, "utf8");
+    const m = /^name:\s*([A-Za-z_][\w]*)/m.exec(content);
+    return m?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const DART_IMPORT_RE = /^\s*import\s+['"]([^'"]+)['"]/gm;
+
+export function extractDartImportSpecifiers(content: string): string[] {
+  const out: string[] = [];
+  DART_IMPORT_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = DART_IMPORT_RE.exec(content)) !== null) {
+    out.push(match[1]!);
+  }
+  return out;
+}
+
+export function resolveDartImportToPath(
+  fromFile: string,
+  specifier: string,
+  files: string[],
+  packageName: string | null,
+): string | null {
+  if (!specifier) return null;
+  if (specifier.startsWith("dart:")) return null;
+
+  if (specifier.startsWith("package:")) {
+    const rest = specifier.slice("package:".length);
+    const slash = rest.indexOf("/");
+    if (slash < 0) return null;
+    const pkg = rest.slice(0, slash);
+    const pathPart = rest.slice(slash + 1);
+    if (!packageName || pkg !== packageName) return null;
+    const base = `lib/${pathPart}`.replace(/\.dart$/, "");
+    return resolveDartFileCandidates(base, files);
+  }
+
+  if (specifier.startsWith("./") || specifier.startsWith("../")) {
+    const fromDir = dirname(fromFile);
+    const joined = normalize(join(fromDir, specifier)).split("\\").join("/");
+    const normalized = joined.replace(/^\.\//, "");
+    if (normalized.startsWith("..") || normalized.includes("/../")) return null;
+    const base = normalized.replace(/\.dart$/, "");
+    return resolveDartFileCandidates(base, files);
+  }
+
+  return null;
+}
+
+function resolveDartFileCandidates(
+  base: string,
+  files: string[],
+): string | null {
+  const fileSet = new Set(files);
+  const candidates = [`${base}.dart`, `${base}/index.dart`];
+  for (const c of candidates) {
+    if (fileSet.has(c)) return c;
+  }
+  return `${base}.dart`;
+}
+
+function extractDartImportTargets(
+  fromFile: string,
+  content: string,
+  files: string[],
+  packageName: string | null,
+): string[] {
+  const out: string[] = [];
+  for (const spec of extractDartImportSpecifiers(content)) {
+    const resolved = resolveDartImportToPath(
+      fromFile,
+      spec,
+      files,
+      packageName,
+    );
+    if (resolved) out.push(resolved);
+  }
+  return out;
+}
+
+const RUST_USE_RE =
+  /^\s*use\s+(crate|super|self)((?:::[A-Za-z_][\w]*)+)/gm;
+
+export function extractRustUsePaths(content: string): string[] {
+  const out: string[] = [];
+  RUST_USE_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = RUST_USE_RE.exec(content)) !== null) {
+    const root = match[1]!;
+    const rest = match[2]!.replace(/^::/, "").split("::").filter(Boolean);
+    // Drop trailing item if it looks like a value/type import of last segment
+    // Keep full module path for resolution; last segment may be type or module.
+    out.push([root, ...rest].join("::"));
+  }
+  return out;
+}
+
+export function resolveRustUseToPath(
+  fromFile: string,
+  usePath: string,
+  files: string[],
+): string | null {
+  const parts = usePath.split("::").filter(Boolean);
+  if (parts.length === 0) return null;
+  const root = parts[0]!;
+  if (root !== "crate" && root !== "super" && root !== "self") return null;
+
+  let modParts: string[] = [];
+  if (root === "crate") {
+    modParts = parts.slice(1);
+  } else if (root === "self") {
+    modParts = [...rustModuleDir(fromFile), ...parts.slice(1)];
+  } else {
+    // super::… — count leading `super` segments after the first
+    const tail = parts.slice(1);
+    let climb = 1;
+    let i = 0;
+    while (i < tail.length && tail[i] === "super") {
+      climb += 1;
+      i += 1;
+    }
+    const fromDir = rustModuleDir(fromFile);
+    modParts = [
+      ...fromDir.slice(0, Math.max(0, fromDir.length - climb)),
+      ...tail.slice(i),
+    ];
+  }
+
+  if (modParts.length === 0) return null;
+  return resolveRustModuleFile(modParts, files);
+}
+
+function rustModuleDir(fromFile: string): string[] {
+  // src/domain/greeting.rs → ["domain"]
+  // src/domain/mod.rs → ["domain"]
+  // src/main.rs → []
+  // src/lib.rs → []
+  const posix = fromFile.split("\\").join("/");
+  if (!posix.startsWith("src/")) return [];
+  const rel = posix.slice("src/".length);
+  if (rel === "main.rs" || rel === "lib.rs") return [];
+  const segments = rel.split("/");
+  const last = segments[segments.length - 1]!;
+  if (last === "mod.rs") {
+    return segments.slice(0, -1);
+  }
+  if (last.endsWith(".rs")) {
+    return [...segments.slice(0, -1), last.replace(/\.rs$/, "")];
+  }
+  return segments;
+}
+
+function resolveRustModuleFile(
+  modParts: string[],
+  files: string[],
+): string | null {
+  const fileSet = new Set(files);
+  // Try progressively dropping the last segment (type vs module).
+  for (let len = modParts.length; len >= 1; len -= 1) {
+    const parts = modParts.slice(0, len);
+    const candidates = [
+      joinPosix(["src", ...parts]) + ".rs",
+      joinPosix(["src", ...parts, "mod.rs"]),
+    ];
+    for (const c of candidates) {
+      if (fileSet.has(c)) return c;
+    }
+  }
+  return joinPosix(["src", ...modParts]) + ".rs";
+}
+
+function extractRustImportTargets(
+  fromFile: string,
+  content: string,
+  files: string[],
+): string[] {
+  const out: string[] = [];
+  for (const usePath of extractRustUsePaths(content)) {
+    const resolved = resolveRustUseToPath(fromFile, usePath, files);
+    if (resolved) out.push(resolved);
+  }
+  return out;
+}
+
 function extractPhpUseNames(content: string): string[] {
   const out: string[] = [];
   PHP_USE_RE.lastIndex = 0;
@@ -490,12 +690,16 @@ function resolveRelativeImport(
     `${normalized}.cts`,
     `${normalized}.php`,
     `${normalized}.py`,
+    `${normalized}.dart`,
+    `${normalized}.rs`,
     `${normalized}/index.ts`,
     `${normalized}/index.tsx`,
     `${normalized}/index.js`,
     `${normalized}/index.jsx`,
     `${normalized}/index.php`,
     `${normalized}/__init__.py`,
+    `${normalized}/index.dart`,
+    `${normalized}/mod.rs`,
   ];
 
   const fileSet = new Set(files);

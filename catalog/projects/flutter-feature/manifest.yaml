@@ -1,0 +1,20 @@
+schema_version: 1
+id: flutter-feature
+name: Flutter app (feature-first)
+version: 0.1.0
+description: Minimal Flutter feature-first scaffold
+
+implements:
+  architecture: flutter-feature
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: dart
+  runtime: flutter
+  tags: [flutter, dart, mobile]
+  file_map:
+    index: index.dart
+    test_suffix: _test.dart
+
+source:
+  root: ./template

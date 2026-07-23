@@ -1,0 +1,34 @@
+roots:
+  required:
+    - lib/features/
+    - lib/shared/
+  optional:
+    - lib/core/
+    - test/
+    - docs/
+
+modules:
+  path: lib/features/:name
+  required_children: []
+  optional_children:
+    - domain/
+    - data/
+    - presentation/
+  forbid:
+    - lib/features/:name/features/
+
+forbid:
+  - lib/widgets/**
+
+shared:
+  path: lib/shared/
+  allow:
+    - lib/**
+    - widgets/**
+    - config/**
+    - types/**
+  forbid_globs:
+    - lib/shared/**/domain/**
+    - lib/shared/**/features/**
+
+allow_exceptions_file: architecture.exceptions.yaml

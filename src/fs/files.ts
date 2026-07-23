@@ -319,6 +319,7 @@ const SKIP_WALK_DIRS = new Set([
   "node_modules",
   "dist",
   "vendor",
+  "target",
   ".git",
   ".venv",
   "venv",
@@ -327,6 +328,7 @@ const SKIP_WALK_DIRS = new Set([
   ".mypy_cache",
   ".ruff_cache",
   ".tox",
+  ".dart_tool",
 ]);
 
 export function listFilesRecursive(root: string): string[] {

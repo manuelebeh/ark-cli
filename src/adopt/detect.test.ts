@@ -105,6 +105,29 @@ describe("detectStacks", () => {
     const result = detectStacks(dir);
     assert.ok(result.tags.includes("go"));
   });
+
+  it("detects flutter from pubspec.yaml", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-detect-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "pubspec.yaml"),
+      "name: demo\ndependencies:\n  flutter:\n    sdk: flutter\n",
+    );
+    const result = detectStacks(dir);
+    assert.ok(result.tags.includes("dart"));
+    assert.ok(result.tags.includes("flutter"));
+  });
+
+  it("detects rust from Cargo.toml", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-detect-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "Cargo.toml"),
+      '[package]\nname = "demo"\nversion = "0.1.0"\nedition = "2021"\n',
+    );
+    const result = detectStacks(dir);
+    assert.ok(result.tags.includes("rust"));
+  });
 });
 
 describe("scoreArchitectures", () => {

@@ -1,0 +1,10 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews feature boundaries under lib/features/
+  - id: flutter-best-practices
+    reason: Dart style, package imports, widget tests, layer hygiene
+
+brief: |
+  Follow Flutter feature-first layout.
+  New domain behavior goes in lib/features/<name>, not lib/shared/.
+  Cross-feature imports use index.dart when a public API exists.

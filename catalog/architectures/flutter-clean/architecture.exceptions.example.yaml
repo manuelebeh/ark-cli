@@ -1,0 +1,6 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: denied-import
+    path: lib/presentation/greeter_page.dart
+    reason: "temporary direct repository access during refactor"

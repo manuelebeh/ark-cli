@@ -1,0 +1,35 @@
+schema_version: 1
+
+id: flutter-feature
+name: Flutter feature-first
+version: 0.1.0
+description: >
+  Flutter app with product features under lib/features/ and cross-cutting code under lib/shared/.
+
+requires:
+  project_manifest: ">=1"
+
+applies_to:
+  stacks: [flutter, dart]
+  languages: [dart]
+
+files:
+  layout: LAYOUT.md
+  tree: tree.schema.yaml
+  conventions: conventions.yaml
+  agent_hints: agents.hints.yaml
+
+checks:
+  - tree
+  - conventions
+  - forbidden_paths
+  - required_files
+
+default_severity: error
+severity:
+  missing-root: error
+  forbidden-path: error
+  module-naming: warn
+  missing-module-file: error
+  denied-import: error
+  cross-module-import: error

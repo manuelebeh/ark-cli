@@ -1,0 +1,20 @@
+schema_version: 1
+id: rust-clean
+name: Rust app (clean)
+version: 0.1.0
+description: Minimal Rust clean-architecture scaffold
+
+implements:
+  architecture: rust-clean
+  architecture_version: ">=0.1.0 <1.0.0"
+
+stack:
+  language: rust
+  runtime: rust
+  tags: [rust]
+  file_map:
+    index: src/application/
+    test_suffix: _test.rs
+
+source:
+  root: ./template

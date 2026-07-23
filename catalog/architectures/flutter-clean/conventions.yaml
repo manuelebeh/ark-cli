@@ -1,0 +1,33 @@
+naming:
+  files:
+    widgets: "snake_case.dart"
+    tests: "**/*_test.dart"
+
+imports:
+  deny:
+    - from: lib/domain/**
+      to: lib/data/**
+    - from: lib/domain/**
+      to: lib/presentation/**
+    - from: lib/presentation/**
+      to: lib/data/**
+  allow:
+    - from: lib/data/**
+      to: lib/domain/**
+    - from: lib/presentation/**
+      to: lib/domain/**
+    - from: lib/main.dart
+      to: lib/presentation/**
+    - from: lib/main.dart
+      to: lib/data/**
+    - from: lib/core/**
+      to: lib/domain/**
+    - from: lib/core/**
+      to: lib/data/**
+    - from: lib/core/**
+      to: lib/presentation/**
+    - from: "**"
+      to: lib/shared/**
+
+tests:
+  colocate: true

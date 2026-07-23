@@ -1,0 +1,10 @@
+roots:
+  required:
+    - src/
+  optional:
+    - tests/
+    - benches/
+    - examples/
+    - docs/
+
+allow_exceptions_file: architecture.exceptions.yaml

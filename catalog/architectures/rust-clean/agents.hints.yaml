@@ -1,0 +1,9 @@
+recommended_agents:
+  - id: architecture-guardian
+    reason: Reviews domain / application / infrastructure import rules
+  - id: rust-best-practices
+    reason: Modules, Result/Option, clippy, rustfmt, ownership
+
+brief: |
+  Follow Rust clean architecture under src/.
+  domain ← application ← infrastructure. Domain must not import outer layers.

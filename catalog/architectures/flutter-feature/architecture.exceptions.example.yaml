@@ -1,0 +1,6 @@
+# Copy to the project root as architecture.exceptions.yaml
+
+exceptions:
+  - code: denied-import
+    path: lib/features/checkout/data/checkout_api.dart
+    reason: "temporary bridge while greeter feature is extracted"

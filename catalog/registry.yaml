@@ -208,6 +208,36 @@ architectures:
     path: architectures/go-hexagonal
     source: local
 
+  - id: flutter-feature
+    name: Flutter feature-first
+    version: 0.1.0
+    path: architectures/flutter-feature
+    source: local
+
+  - id: flutter-clean
+    name: Flutter clean architecture
+    version: 0.1.0
+    path: architectures/flutter-clean
+    source: local
+
+  - id: rust-crate
+    name: Rust crate
+    version: 0.1.0
+    path: architectures/rust-crate
+    source: local
+
+  - id: rust-clean
+    name: Rust clean architecture
+    version: 0.1.0
+    path: architectures/rust-clean
+    source: local
+
+  - id: rust-hexagonal
+    name: Rust hexagonal
+    version: 0.1.0
+    path: architectures/rust-hexagonal
+    source: local
+
 projects:
   - id: ts-lib
     name: TypeScript library
@@ -489,6 +519,46 @@ projects:
     source: local
     stacks: [go]
 
+  - id: flutter-feature
+    name: Flutter app (feature-first)
+    version: 0.1.0
+    implements: flutter-feature
+    path: projects/flutter-feature
+    source: local
+    stacks: [flutter, dart]
+
+  - id: flutter-clean
+    name: Flutter app (clean)
+    version: 0.1.0
+    implements: flutter-clean
+    path: projects/flutter-clean
+    source: local
+    stacks: [flutter, dart]
+
+  - id: rust-crate
+    name: Rust app (crate)
+    version: 0.1.0
+    implements: rust-crate
+    path: projects/rust-crate
+    source: local
+    stacks: [rust]
+
+  - id: rust-clean
+    name: Rust app (clean)
+    version: 0.1.0
+    implements: rust-clean
+    path: projects/rust-clean
+    source: local
+    stacks: [rust]
+
+  - id: rust-hexagonal
+    name: Rust app (hexagonal)
+    version: 0.1.0
+    implements: rust-hexagonal
+    path: projects/rust-hexagonal
+    source: local
+    stacks: [rust]
+
 agents:
   # --- Local personas ---
   - id: feature-owner
@@ -666,6 +736,28 @@ agents:
     source: local
     stacks: [go]
     description: Modules, internal/cmd, errors, context, testing, gofmt
+    install:
+      merge_into: AGENTS.md
+
+  - id: flutter-best-practices
+    name: Flutter Best Practices
+    version: 0.1.0
+    kind: guidelines
+    path: agents/flutter-best-practices
+    source: local
+    stacks: [flutter, dart]
+    description: Feature-first vs clean, domain purity, package imports, widget tests
+    install:
+      merge_into: AGENTS.md
+
+  - id: rust-best-practices
+    name: Rust Best Practices
+    version: 0.1.0
+    kind: guidelines
+    path: agents/rust-best-practices
+    source: local
+    stacks: [rust]
+    description: Modules, Result/Option, clippy/rustfmt, ownership, layer boundaries
     install:
       merge_into: AGENTS.md
 

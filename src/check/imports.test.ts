@@ -158,4 +158,148 @@ func Hello() string { return strings.TrimSpace(fmt.Sprintf("hi")) }
     );
     assert.equal(issues.length, 0);
   });
+
+  it("flags denied Dart feature domain import via package URI", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-dart-imports-"));
+    dirs.push(dir);
+    mkdirSync(join(dir, "lib", "features", "billing", "ui"), {
+      recursive: true,
+    });
+    mkdirSync(join(dir, "lib", "features", "auth", "domain"), {
+      recursive: true,
+    });
+    writeFileSync(join(dir, "pubspec.yaml"), "name: demo\n");
+    writeFileSync(
+      join(dir, "lib", "features", "billing", "ui", "pay.dart"),
+      `import 'package:demo/features/auth/domain/user.dart';\n`,
+    );
+    writeFileSync(
+      join(dir, "lib", "features", "auth", "domain", "user.dart"),
+      `class User {}\n`,
+    );
+
+    const dartConventions: Conventions = {
+      imports: {
+        deny: [
+          {
+            from: "lib/features/*",
+            to: "lib/features/*/domain/**",
+          },
+        ],
+      },
+    };
+
+    const issues = checkImports(
+      dir,
+      [
+        "lib/features/billing/ui/pay.dart",
+        "lib/features/auth/domain/user.dart",
+      ],
+      dartConventions,
+      { ...manifest, id: "flutter-feature" },
+      "lib/features/:name",
+    );
+
+    assert.ok(
+      issues.some((i) => i.code === "denied-import"),
+      `expected denied-import, got ${JSON.stringify(issues)}`,
+    );
+  });
+
+  it("ignores dart: and foreign package imports", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-dart-stdlib-"));
+    dirs.push(dir);
+    mkdirSync(join(dir, "lib", "domain"), { recursive: true });
+    writeFileSync(join(dir, "pubspec.yaml"), "name: demo\n");
+    writeFileSync(
+      join(dir, "lib", "domain", "greet.dart"),
+      `import 'dart:core';\nimport 'package:flutter/material.dart';\n`,
+    );
+
+    const dartConventions: Conventions = {
+      imports: {
+        deny: [{ from: "lib/domain/**", to: "lib/data/**" }],
+      },
+    };
+
+    const issues = checkImports(
+      dir,
+      ["lib/domain/greet.dart"],
+      dartConventions,
+      { ...manifest, id: "flutter-clean" },
+    );
+    assert.equal(issues.length, 0);
+  });
+
+  it("flags denied Rust domain → infrastructure use", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-rust-imports-"));
+    dirs.push(dir);
+    mkdirSync(join(dir, "src", "domain"), { recursive: true });
+    mkdirSync(join(dir, "src", "infrastructure"), { recursive: true });
+    writeFileSync(
+      join(dir, "src", "domain", "mod.rs"),
+      `use crate::infrastructure::db;\n`,
+    );
+    writeFileSync(
+      join(dir, "src", "infrastructure", "mod.rs"),
+      `pub mod db;\n`,
+    );
+    writeFileSync(join(dir, "src", "infrastructure", "db.rs"), `pub fn y() {}\n`);
+
+    const rustConventions: Conventions = {
+      imports: {
+        deny: [
+          {
+            from: "src/domain/**",
+            to: "src/infrastructure/**",
+          },
+        ],
+      },
+    };
+
+    const issues = checkImports(
+      dir,
+      [
+        "src/domain/mod.rs",
+        "src/infrastructure/mod.rs",
+        "src/infrastructure/db.rs",
+      ],
+      rustConventions,
+      { ...manifest, id: "rust-clean" },
+    );
+
+    assert.ok(
+      issues.some((i) => i.code === "denied-import"),
+      `expected denied-import, got ${JSON.stringify(issues)}`,
+    );
+  });
+
+  it("ignores Rust std/external crate uses", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ark-rust-std-"));
+    dirs.push(dir);
+    mkdirSync(join(dir, "src", "domain"), { recursive: true });
+    writeFileSync(
+      join(dir, "src", "domain", "mod.rs"),
+      `use std::fmt;\nuse serde::Serialize;\n`,
+    );
+
+    const rustConventions: Conventions = {
+      imports: {
+        deny: [
+          {
+            from: "src/domain/**",
+            to: "src/infrastructure/**",
+          },
+        ],
+      },
+    };
+
+    const issues = checkImports(
+      dir,
+      ["src/domain/mod.rs"],
+      rustConventions,
+      { ...manifest, id: "rust-clean" },
+    );
+    assert.equal(issues.length, 0);
+  });
 });
