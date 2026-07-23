@@ -55,6 +55,8 @@ node dist/cli.js create fa-full --stack fastapi,python --architecture fastapi-cl
 node dist/cli.js create php-app --language php --stack php --architecture php-hexagonal --depth minimal
 node dist/cli.js create py-app --language python --stack python --architecture python-src --depth minimal
 node dist/cli.js check ./demo
+node dist/cli.js check --json
+node dist/cli.js check --format sarif
 ```
 
 `--project` alone skips language/framework/architecture prompts (architecture is derived). `--language` / `-l` picks the language bucket (e.g. `python`). `--stack` accepts a full tag set (`laravel,php`), a language (`python`), or a framework tag (`django`). `--architecture` / `--arch` then picks among templates for that family.
@@ -124,6 +126,8 @@ ark add project ./pack --id mon-stack --architecture my-arch
 ark list
 ark create app --stack <tags> --architecture my-arch --project mon-stack
 ark check ./app
+ark check --json
+ark check --format sarif
 
 # Add agents later (into an existing scaffold)
 ark add agent --dir ./app --preset matt-pocock-core
@@ -222,6 +226,28 @@ TanStack skills ship via npm (`@tanstack/intent`), not as Ark catalog agents yet
 
 `karpathy` and `ponytail` share exclusive group `minimalism` (warning if both selected).
 
+## CI (`ark check`)
+
+Machine-readable output for pipelines (no Clack text):
+
+```bash
+ark check --json
+ark check --format sarif
+```
+
+Exit `1` when any issue has severity `error`; warnings alone exit `0`.
+
+Composite GitHub Action:
+
+```yaml
+- uses: manuelebeh/ark-cli/.github/actions/ark-check@v0.5.0
+  with:
+    path: .
+    format: json
+```
+
+Inputs: `path` (default `.`), `format` (`json` | `sarif` | `text`), optional `catalog`, `version` (npm `ark` version, default `0.5.0`). Example workflow: [`.github/workflows/ark-check.yml.example`](.github/workflows/ark-check.yml.example).
+
 ## Status
 
-v0.5: Django + FastAPI catalog packs (eight architectures), Python import checking, shared depth/bootstrap (`uv` / `host` / `poetry` / cookiecutter / `django-admin`). v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.
+v0.5: Django + FastAPI catalog packs (eight architectures), Python import checking, shared depth/bootstrap (`uv` / `host` / `poetry` / cookiecutter / `django-admin`), `ark check --json` / `--format sarif`, GitHub Action. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.

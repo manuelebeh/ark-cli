@@ -1,0 +1,19 @@
+# Example: copy into your repo as .github/workflows/ark-check.yml
+# and adjust the `uses:` ref to a released tag.
+# This file uses a .yml.example suffix so GitHub does not run it in this repo.
+name: ark-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: manuelebeh/ark-cli/.github/actions/ark-check@v0.5.0
+        with:
+          path: .
+          format: json

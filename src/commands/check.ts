@@ -3,6 +3,14 @@ import * as p from "@clack/prompts";
 import { resolve } from "node:path";
 import { userCatalogRoot } from "../catalog/load.js";
 import { checkProject } from "../check/engine.js";
+import {
+  formatCheckJson,
+  formatCheckSarif,
+  resolveCheckFormat,
+  summarizeIssues,
+} from "../check/report.js";
+
+const TOOL_VERSION = "0.5.0";
 
 export const checkCommand = defineCommand({
   meta: {
@@ -20,10 +28,36 @@ export const checkCommand = defineCommand({
       type: "string",
       description: "User catalog directory (default: ~/.ark/catalog)",
     },
+    json: {
+      type: "boolean",
+      description: "Emit JSON to stdout (alias for --format json)",
+      default: false,
+    },
+    format: {
+      type: "string",
+      description: "Output format: text | json | sarif (default: text)",
+      default: "text",
+    },
   },
   async run({ args }) {
+    let format;
+    try {
+      format = resolveCheckFormat({
+        json: args.json,
+        format: args.format,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
+      process.exit(1);
+    }
+
     const root = resolve(args.path);
-    p.intro(`ark check → ${root}`);
+    const machine = format === "json" || format === "sarif";
+
+    if (!machine) {
+      p.intro(`ark check → ${root}`);
+    }
 
     const userRoot = args.catalog
       ? String(args.catalog)
@@ -33,12 +67,30 @@ export const checkCommand = defineCommand({
     try {
       result = await checkProject(root, { userCatalogRoot: userRoot });
     } catch (error) {
-      p.cancel(error instanceof Error ? error.message : String(error));
+      const message = error instanceof Error ? error.message : String(error);
+      if (machine) {
+        console.error(message);
+      } else {
+        p.cancel(message);
+      }
       process.exit(1);
     }
 
-    const errors = result.issues.filter((i) => i.severity === "error");
-    const warns = result.issues.filter((i) => i.severity === "warn");
+    const { errors, warnings } = summarizeIssues(result.issues);
+
+    if (format === "json") {
+      process.stdout.write(formatCheckJson(result));
+      if (errors > 0) process.exit(1);
+      return;
+    }
+
+    if (format === "sarif") {
+      process.stdout.write(
+        formatCheckSarif(result, { toolVersion: TOOL_VERSION }),
+      );
+      if (errors > 0) process.exit(1);
+      return;
+    }
 
     if (result.issues.length === 0) {
       p.log.success(`OK: architecture "${result.architectureId}"`);
@@ -56,9 +108,9 @@ export const checkCommand = defineCommand({
     }
 
     p.outro(
-      `${errors.length} error(s), ${warns.length} warning(s) (${result.architectureId})`,
+      `${errors} error(s), ${warnings} warning(s) (${result.architectureId})`,
     );
-    if (errors.length > 0) {
+    if (errors > 0) {
       process.exit(1);
     }
   },

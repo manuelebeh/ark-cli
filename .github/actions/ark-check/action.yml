@@ -1,0 +1,43 @@
+name: ark-check
+description: Run ark check against a project (JSON or SARIF for CI)
+author: manuelebeh
+
+inputs:
+  path:
+    description: Project path to check
+    required: false
+    default: "."
+  format:
+    description: Output format (json | sarif | text)
+    required: false
+    default: "json"
+  catalog:
+    description: Optional user catalog directory (--catalog)
+    required: false
+    default: ""
+  version:
+    description: npm package version of ark to install
+    required: false
+    default: "0.5.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install ark
+      shell: bash
+      run: npm install -g "ark@${{ inputs.version }}"
+
+    - name: Run ark check
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=(check "${{ inputs.path }}" --format "${{ inputs.format }}")
+        if [ -n "${{ inputs.catalog }}" ]; then
+          args+=(--catalog "${{ inputs.catalog }}")
+        fi
+        ark "${args[@]}"
