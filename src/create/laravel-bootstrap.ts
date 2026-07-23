@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
+import { commandExists, ensureTool } from "../fs/command-exists.js";
 
 export type LaravelBootstrapMethod =
   | "laravel-installer"
@@ -60,16 +61,6 @@ export function isLaravelStack(stacks: string[]): boolean {
   return stacks.some((s) => s.toLowerCase() === "laravel");
 }
 
-function commandExists(command: string): boolean {
-  const probe = process.platform === "win32" ? "where" : "which";
-  const result = spawnSync(probe, [command], { encoding: "utf8" });
-  return result.status === 0;
-}
-
-function ensureTool(command: string, installHint: string): void {
-  if (commandExists(command)) return;
-  throw new Error(`Required tool not found: ${command}. ${installHint}`);
-}
 
 function run(
   command: string,

@@ -47,7 +47,7 @@ export function arkCacheRoot(): string {
   return process.env.ARK_CACHE_DIR ?? join(homedir(), ".ark", "cache");
 }
 
-function repoCacheDir(source: GithubSource): string {
+export function repoCacheDir(source: GithubSource): string {
   return join(
     arkCacheRoot(),
     "github",
@@ -56,6 +56,57 @@ function repoCacheDir(source: GithubSource): string {
     source.ref.replace(/[^\w.-]+/g, "_"),
     "_repo",
   );
+}
+
+export type ClearArkCacheScope = {
+  owner?: string;
+  repo?: string;
+  ref?: string;
+};
+
+export type ClearArkCacheResult = {
+  root: string;
+  removed: string[];
+  dryRun: boolean;
+};
+
+/** Delete GitHub cache dirs (entire cache or a scoped owner/repo/ref). */
+export function clearArkCache(
+  scope: ClearArkCacheScope = {},
+  options: { dryRun?: boolean } = {},
+): ClearArkCacheResult {
+  const dryRun = Boolean(options.dryRun);
+  const root = arkCacheRoot();
+  const removed: string[] = [];
+
+  if (!existsSync(root)) {
+    return { root, removed, dryRun };
+  }
+
+  let target = join(root, "github");
+  if (scope.owner) {
+    target = join(target, scope.owner);
+    if (scope.repo) {
+      target = join(target, scope.repo);
+      if (scope.ref) {
+        target = join(target, scope.ref.replace(/[^\w.-]+/g, "_"));
+      }
+    }
+  }
+
+  if (!scope.owner) {
+    target = root;
+  }
+
+  if (!existsSync(target)) {
+    return { root, removed, dryRun };
+  }
+
+  removed.push(target);
+  if (!dryRun) {
+    rmSync(target, { recursive: true, force: true });
+  }
+  return { root, removed, dryRun };
 }
 
 /**
@@ -88,8 +139,15 @@ export async function fetchGithubSource(source: GithubSource): Promise<string> {
   return selected;
 }
 
-async function ensureRepoCached(source: GithubSource): Promise<string> {
+export async function ensureRepoCached(
+  source: GithubSource,
+  options: { force?: boolean } = {},
+): Promise<string> {
   const dest = repoCacheDir(source);
+  if (options.force && existsSync(dest)) {
+    rmSync(dest, { recursive: true, force: true });
+  }
+
   const marker = join(dest, ".ark-ok");
   const rootFile = join(dest, "ROOT");
   if (existsSync(marker) && existsSync(rootFile)) {

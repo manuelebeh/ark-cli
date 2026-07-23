@@ -4,12 +4,16 @@ CLI to create projects from a catalog (architectures, project types, agents) wit
 
 ```bash
 ark create my-app
+ark adopt
 ark check
 ark list
 ark list --stack react,ui
 ark add architecture ./my-arch
 ark add project ./my-template
 ark add agent --agents karpathy
+ark remove agent --agents karpathy
+ark update
+ark doctor
 ```
 
 ## Concepts
@@ -248,6 +252,44 @@ Composite GitHub Action:
 
 Inputs: `path` (default `.`), `format` (`json` | `sarif` | `text`), optional `catalog`, `version` (npm `ark` version, default `0.5.0`). Example workflow: [`.github/workflows/ark-check.yml.example`](.github/workflows/ark-check.yml.example).
 
+## Adopt, update, remove, doctor
+
+Bind an existing repo (detect stacks + score architectures, write `ark.project.yaml`, then `check`):
+
+```bash
+ark adopt
+ark adopt --architecture feature-first --project ts-lib --yes
+ark adopt --json
+```
+
+Refresh GitHub cache under `~/.ark/cache` (or `ARK_CACHE_DIR`):
+
+```bash
+ark update
+ark update --dry-run
+ark update --agents --dir ./my-app
+```
+
+Remove agents (inverse of `ark add agent`):
+
+```bash
+ark remove agent --agents karpathy,feature-owner
+```
+
+Environment diagnostics:
+
+```bash
+ark doctor
+ark doctor --dir . --strict
+ark doctor --json
+```
+
+Run unit tests:
+
+```bash
+npm test
+```
+
 ## Status
 
-v0.5: Django + FastAPI catalog packs (eight architectures), Python import checking, shared depth/bootstrap (`uv` / `host` / `poetry` / cookiecutter / `django-admin`), `ark check --json` / `--format sarif`, GitHub Action. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.
+v0.5: Django + FastAPI catalog packs (eight architectures), Python import checking, shared depth/bootstrap (`uv` / `host` / `poetry` / cookiecutter / `django-admin`), `ark check --json` / `--format sarif`, GitHub Action, `adopt` / `update` / `remove agent` / `doctor`, `npm test`. v0.4: GitHub download + cache, stack-filtered agent selection, remote skill/guidelines install, user catalog + `ark add`, multi-architecture create (`feature-first`, `hexagonal`, `clean`, five Laravel approaches), optional `--run-postinstall`.
