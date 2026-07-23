@@ -20,7 +20,7 @@ ark add agent --agents karpathy
 | Project type | Template that implements an architecture (+ stack tags) |
 | Agent | Portable pack: local manifest, remote guidelines, Agent Skills, or tool-skills |
 
-At `ark create`, you pick a **stack** (project family) first, then an **architecture** available for that stack. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
+At `ark create`, you pick a **language** first (PHP, Python, TypeScript, …), then a **framework** family for that language (Laravel, Django, FastAPI, …), then an **architecture**. Custom arches go in the user catalog (`ark add architecture`); `create` and `check` read them from the registry with no special-case code.
 
 ## Agent kinds
 
@@ -55,7 +55,7 @@ node dist/cli.js create fa-full --stack fastapi,python --architecture fastapi-cl
 node dist/cli.js check ./demo
 ```
 
-`--project` alone skips stack/architecture prompts (architecture is derived). `--stack` selects the project family; `--architecture` / `--arch` then picks among templates for that family. Both together resolve the project type.
+`--project` alone skips language/framework/architecture prompts (architecture is derived). `--language` / `-l` picks the language bucket (e.g. `python`). `--stack` accepts a full tag set (`laravel,php`), a language (`python`), or a framework tag (`django`). `--architecture` / `--arch` then picks among templates for that family.
 
 On Laravel, Django, and FastAPI stacks, `--depth minimal|full` chooses an Ark skeleton or a real framework bootstrap. Full mode also needs `--bootstrap`:
 
@@ -63,7 +63,7 @@ On Laravel, Django, and FastAPI stacks, `--depth minimal|full` chooses an Ark sk
 - Django: `uv` | `host` | `poetry` | `cookiecutter-django` | `django-admin`
 - FastAPI: `uv` | `host` | `poetry` | `cookiecutter`
 
-In non-interactive shells (no TTY), pass required flags (`name`, `--project`, or `--stack` + `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
+In non-interactive shells (no TTY), pass required flags (`name`, `--project`, or `--language`/`--stack` + `--architecture`, etc.). Agent prompts are skipped (no agents) unless you pass `--agents` / `--preset`. Cancelled prompts exit with code `1`.
 
 Remote agents are cached under `~/.ark/cache` (override with `ARK_CACHE_DIR`).
 

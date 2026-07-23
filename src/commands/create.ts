@@ -36,9 +36,15 @@ import {
 import { createProject } from "../create/scaffold.js";
 import {
   findStackGroup,
+  formatLanguageLabel,
   formatStackTags,
+  isLanguageTag,
+  languageFromStacks,
+  listLanguages,
   listStackGroups,
   resolveProjectInGroup,
+  resolveStackFlag,
+  stackGroupsForLanguage,
 } from "../create/stacks.js";
 import { fetchGithubSource, parseGithubSource } from "../fetch/github.js";
 import type { ProjectManifest, Registry } from "../types.js";
@@ -82,8 +88,13 @@ export const createCommand = defineCommand({
     stack: {
       type: "string",
       description:
-        "Stack tags for the project family, comma-separated (e.g. lib,typescript)",
+        "Stack tags (e.g. laravel,php), language (python), or framework (django)",
       alias: "s",
+    },
+    language: {
+      type: "string",
+      description: "Language bucket first (php, python, typescript, …)",
+      alias: "l",
     },
     architecture: {
       type: "string",
@@ -158,6 +169,9 @@ export const createCommand = defineCommand({
           .map((s) => s.trim())
           .filter(Boolean)
       : undefined;
+    const languageFromFlag = args.language
+      ? String(args.language).trim().toLowerCase()
+      : undefined;
     let projectId = args.project as string | undefined;
     let architectureId = archFromFlag;
 
@@ -190,23 +204,65 @@ export const createCommand = defineCommand({
       stackFromFlag && !projectId
         ? findStackGroup(stackGroups, stackFromFlag)
         : undefined;
+    let language =
+      languageFromFlag ??
+      (stackGroup ? languageFromStacks(stackGroup.stacks) : undefined);
 
-    if (stackFromFlag && !projectId && !stackGroup) {
-      const available = stackGroups
-        .map((g) => formatStackTags(g.stacks))
-        .join(" | ");
+    if (languageFromFlag && !isLanguageTag(languageFromFlag)) {
       p.cancel(
-        `No project family matches stacks "${stackFromFlag.join(",")}". Available: ${available}`,
+        `Unknown --language "${languageFromFlag}". Use a language tag (php, python, typescript, …).`,
       );
       process.exit(1);
     }
 
-    const selectableGroups =
+    if (stackFromFlag && !projectId && !stackGroup) {
+      const resolved = resolveStackFlag(stackGroups, stackFromFlag);
+      if (resolved.group) {
+        stackGroup = resolved.group;
+        language = resolved.language ?? languageFromStacks(stackGroup.stacks);
+      } else if (resolved.candidates.length > 0) {
+        language = resolved.language ?? language;
+      } else {
+        const available = stackGroups
+          .map((g) => formatStackTags(g.stacks))
+          .join(" | ");
+        p.cancel(
+          `No project family matches stacks "${stackFromFlag.join(",")}". Available: ${available}`,
+        );
+        process.exit(1);
+      }
+    }
+
+    let selectableGroups =
       architectureId && !projectId && !stackGroup
         ? stackGroups.filter((g) =>
             g.projects.some((pr) => pr.implements === architectureId),
           )
         : stackGroups;
+
+    if (stackFromFlag && !stackGroup) {
+      const resolved = resolveStackFlag(stackGroups, stackFromFlag);
+      if (resolved.candidates.length > 0) {
+        const narrowed = resolved.candidates.filter((g) =>
+          selectableGroups.some((s) => s.key === g.key),
+        );
+        selectableGroups =
+          narrowed.length > 0 ? narrowed : resolved.candidates;
+      }
+    }
+
+    if (language && !stackGroup) {
+      const forLang = stackGroupsForLanguage(selectableGroups, language);
+      if (forLang.length === 0) {
+        p.cancel(
+          `No project family for language "${language}"${
+            architectureId ? ` with architecture "${architectureId}"` : ""
+          }.`,
+        );
+        process.exit(1);
+      }
+      selectableGroups = forLang;
+    }
 
     if (
       architectureId &&
@@ -221,12 +277,42 @@ export const createCommand = defineCommand({
     }
 
     if (!projectId && !stackGroup) {
+      const languages = listLanguages(selectableGroups);
+      if (!language) {
+        if (languages.length === 1) {
+          language = languages[0];
+        } else if (languages.length > 1) {
+          requireInteractive("--language / -l (or --stack / -s)");
+          const selected = await p.select({
+            message: "Language",
+            options: languages.map((lang) => {
+              const count = stackGroupsForLanguage(
+                selectableGroups,
+                lang,
+              ).length;
+              return {
+                value: lang,
+                label: formatLanguageLabel(lang),
+                hint: `${count} stack${count === 1 ? "" : "s"}`,
+              };
+            }),
+          });
+          exitIfCancelled(selected);
+          language = selected as string;
+        }
+      }
+
+      if (language) {
+        selectableGroups = stackGroupsForLanguage(selectableGroups, language);
+        p.log.info(`Language: ${formatLanguageLabel(language)}`);
+      }
+
       if (selectableGroups.length === 1) {
         stackGroup = selectableGroups[0];
-      } else {
+      } else if (selectableGroups.length > 1) {
         requireInteractive("--stack / -s (or --project / -p)");
         const selected = await p.select({
-          message: "Stack",
+          message: "Framework",
           options: selectableGroups.map((group) => {
             const archCount = new Set(
               group.projects.map((pr) => pr.implements),
@@ -241,15 +327,16 @@ export const createCommand = defineCommand({
         exitIfCancelled(selected);
         stackGroup = selectableGroups.find((g) => g.key === selected);
       }
+
       if (!stackGroup) {
-        p.cancel("Unknown stack");
+        p.cancel("Unknown framework / stack");
         process.exit(1);
       }
     }
 
     if (!projectId && stackGroup) {
       p.log.info(
-        `Stack: ${stackGroup.label} (${formatStackTags(stackGroup.stacks)})`,
+        `Framework: ${stackGroup.label} (${formatStackTags(stackGroup.stacks)})`,
       );
 
       const archOptions = stackGroup.projects.map((proj) => {
